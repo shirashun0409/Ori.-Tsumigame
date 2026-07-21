@@ -58,8 +58,13 @@ public class Capsule : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.RightArrow))
         {
-            gridX++;
-            UpdatePosition();
+            int maxX = isVertical ? BoardManager.Width - 1 : BoardManager.Width - 2;
+
+            if (gridX < maxX)
+            {
+                gridX++;
+                UpdatePosition();
+            }
         }
     }
 
