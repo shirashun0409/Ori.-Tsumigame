@@ -2,47 +2,147 @@ using UnityEngine;
 
 public class Capsule : MonoBehaviour
 {
+    [Header("Prefab")]
     [SerializeField]
     private GameObject capsulePartPrefab;
+
+    [Header("Fall")]
+    [SerializeField]
+    private float fallInterval = 1.0f;
+
+    [SerializeField]
+    private float fastFallInterval = 0.1f;
+
+    private float fallTimer;
+
+    // グリッド座標
+    private int gridX = 3;
+    private int gridY = 0;
+
+    // false=横　true=縦
+    private bool isVertical = false;
+
+    // カプセルのパーツ
+    private GameObject leftPart;
+    private GameObject rightPart;
 
     private void Start()
     {
         CreateCapsule();
+        UpdatePosition();
     }
 
     private void Update()
     {
+        Move();
+
+        Fall();
+
+        Rotate();
+    }
+
+    //----------------------------------------------------
+    // 移動
+    //----------------------------------------------------
+
+    private void Move()
+    {
         if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
-            transform.position += Vector3.left;
+            if (gridX > 0)
+            {
+                gridX--;
+                UpdatePosition();
+            }
         }
 
         if (Input.GetKeyDown(KeyCode.RightArrow))
         {
-            transform.position += Vector3.right;
+            gridX++;
+            UpdatePosition();
         }
     }
 
-    private void CreateCapsule()
+    //----------------------------------------------------
+    // 落下
+    //----------------------------------------------------
+
+    private void Fall()
     {
-        CreatePart(Vector3.zero);
-        CreatePart(Vector3.right);
+        float interval = fallInterval;
+
+        if (Input.GetKey(KeyCode.DownArrow))
+        {
+            interval = fastFallInterval;
+        }
+
+        fallTimer += Time.deltaTime;
+
+        if (fallTimer >= interval)
+        {
+            gridY++;
+            UpdatePosition();
+
+            fallTimer = 0f;
+        }
     }
 
-    private void CreatePart(Vector3 offset)
+    //----------------------------------------------------
+    // 回転
+    //----------------------------------------------------
+
+    private void Rotate()
+    {
+        if (!Input.GetKeyDown(KeyCode.Space))
+            return;
+
+        isVertical = !isVertical;
+
+        if (isVertical)
+        {
+            rightPart.transform.localPosition = Vector3.up;
+        }
+        else
+        {
+            rightPart.transform.localPosition = Vector3.right;
+        }
+    }
+
+    //----------------------------------------------------
+    // カプセル生成
+    //----------------------------------------------------
+
+    private void CreateCapsule()
+    {
+        leftPart = CreatePart(Vector3.zero);
+        rightPart = CreatePart(Vector3.right);
+    }
+
+    private GameObject CreatePart(Vector3 localPos)
     {
         GameObject obj = Instantiate(
             capsulePartPrefab,
-            transform.position + offset,
-            Quaternion.identity,
             transform);
+
+        obj.transform.localPosition = localPos;
 
         CapsulePart part = obj.GetComponent<CapsulePart>();
 
-        CapsuleColor randomColor = (CapsuleColor)Random.Range(0, 3);
+        CapsuleColor color =
+            (CapsuleColor)Random.Range(0, 3);
 
-        part.SetColor(randomColor);
+        part.SetColor(color);
+
+        return obj;
+    }
+
+    //----------------------------------------------------
+    // 表示位置更新
+    //----------------------------------------------------
+
+    private void UpdatePosition()
+    {
+        transform.position =
+            BoardManager.Instance.GridToWorld(gridX, gridY);
     }
 }
-
-

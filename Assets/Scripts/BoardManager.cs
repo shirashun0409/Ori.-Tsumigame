@@ -2,6 +2,8 @@ using UnityEngine;
 
 public class BoardManager : MonoBehaviour
 {
+    public static BoardManager Instance { get; private set; }
+
     public const int Width = 8;
     public const int Height = 16;
 
@@ -11,9 +13,32 @@ public class BoardManager : MonoBehaviour
     [SerializeField]
     private float cellSize = 1.0f;
 
+    // 盤面の左上座標
+    private Vector2 boardOrigin;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
+
     private void Start()
     {
+        boardOrigin = new Vector2(
+            -(Width - 1) * cellSize / 2f,
+             (Height - 1) * cellSize / 2f);
+
         CreateBoard();
+    }
+
+    /// <summary>
+    /// マス座標をUnity座標へ変換
+    /// </summary>
+    public Vector3 GridToWorld(int x, int y)
+    {
+        return new Vector3(
+            boardOrigin.x + x * cellSize,
+            boardOrigin.y - y * cellSize,
+            0f);
     }
 
     private void CreateBoard()
@@ -22,15 +47,11 @@ public class BoardManager : MonoBehaviour
         {
             for (int x = 0; x < Width; x++)
             {
-                float offsetX = (Width - 1) * cellSize / 2f;
-                float offsetY = (Height - 1) * cellSize / 2f;
-
-                Vector3 position = new Vector3(
-                    x * cellSize - offsetX,
-                    offsetY - y * cellSize,
-                    0);
-
-                Instantiate(cellPrefab, position, Quaternion.identity, transform);
+                Instantiate(
+                    cellPrefab,
+                    GridToWorld(x, y),
+                    Quaternion.identity,
+                    transform);
             }
         }
     }
