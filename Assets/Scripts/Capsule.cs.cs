@@ -15,6 +15,7 @@ public class Capsule : MonoBehaviour
 
     private float fallTimer;
 
+    private bool isLanded = false;
     // グリッド座標
     private int gridX = 3;
     private int gridY = 0;
@@ -34,11 +35,12 @@ public class Capsule : MonoBehaviour
 
     private void Update()
     {
-        Move();
-
-        Fall();
-
-        Rotate();
+        if (!isLanded)
+        {
+            Move();
+            Fall();
+            Rotate();
+        }
     }
 
     //----------------------------------------------------
@@ -85,12 +87,20 @@ public class Capsule : MonoBehaviour
 
         if (fallTimer >= interval)
         {
-            gridY++;
-            UpdatePosition();
+            if (gridY < BoardManager.Height - 1)
+            {
+                gridY++;
+                UpdatePosition();
+            }
+            else
+            {
+                Land();
+            }
 
             fallTimer = 0f;
         }
     }
+
 
     //----------------------------------------------------
     // 回転
@@ -149,5 +159,11 @@ public class Capsule : MonoBehaviour
     {
         transform.position =
             BoardManager.Instance.GridToWorld(gridX, gridY);
+    }
+    private void Land()
+    {
+        isLanded = true;
+
+        Debug.Log("着地完了");
     }
 }

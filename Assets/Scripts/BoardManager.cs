@@ -12,13 +12,16 @@ public class BoardManager : MonoBehaviour
 
     [SerializeField]
     private float cellSize = 1.0f;
-
+    // 盤面データ
+    private CapsulePart[,] board;
     // 盤面の左上座標
     private Vector2 boardOrigin;
 
     private void Awake()
     {
         Instance = this;
+
+        board = new CapsulePart[Width, Height];
     }
 
     private void Start()
@@ -40,7 +43,10 @@ public class BoardManager : MonoBehaviour
             boardOrigin.y - y * cellSize,
             0f);
     }
-
+    public void SetCell(int x, int y, CapsulePart part)
+    {
+        board[x, y] = part;
+    }
     private void CreateBoard()
     {
         for (int y = 0; y < Height; y++)
