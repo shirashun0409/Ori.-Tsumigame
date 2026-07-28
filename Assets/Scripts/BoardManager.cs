@@ -47,6 +47,14 @@ public class BoardManager : MonoBehaviour
     {
         board[x, y] = part;
     }
+    public CapsulePart GetCell(int x, int y)
+    {
+        return board[x, y];
+    }
+    public bool IsEmpty(int x, int y)
+    {
+        return board[x, y] == null;
+    }
     private void CreateBoard()
     {
         for (int y = 0; y < Height; y++)
