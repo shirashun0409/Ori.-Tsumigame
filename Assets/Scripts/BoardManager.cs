@@ -55,6 +55,13 @@ public class BoardManager : MonoBehaviour
     {
         return board[x, y] == null;
     }
+    public bool IsInsideBoard(int x, int y)
+    {
+        return x >= 0 &&
+               x < Width &&
+               y >= 0 &&
+               y < Height;
+    }
     private void CreateBoard()
     {
         for (int y = 0; y < Height; y++)
@@ -68,5 +75,30 @@ public class BoardManager : MonoBehaviour
                     transform);
             }
         }
+    }
+    public void PlaceCapsule(
+    int x,
+    int y,
+    bool vertical,
+    GameObject left,
+    GameObject right)
+    {
+        CapsulePart leftPart = left.GetComponent<CapsulePart>();
+        CapsulePart rightPart = right.GetComponent<CapsulePart>();
+
+        board[x, y] = leftPart;
+
+        if (vertical)
+        {
+            board[x, y - 1] = rightPart;
+        }
+        else
+        {
+            board[x + 1, y] = rightPart;
+        }
+
+        // BoardManagerの子にして、位置を固定する
+        left.transform.SetParent(transform);
+        right.transform.SetParent(transform);
     }
 }

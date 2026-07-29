@@ -111,15 +111,23 @@ public class Capsule : MonoBehaviour
         if (!Input.GetKeyDown(KeyCode.Space))
             return;
 
-        isVertical = !isVertical;
-
-        if (isVertical)
+        if (!isVertical)
         {
-            rightPart.transform.localPosition = Vector3.up;
+            // 横 → 縦
+            if (gridY > 0)
+            {
+                isVertical = true;
+                rightPart.transform.localPosition = Vector3.up;
+            }
         }
         else
         {
-            rightPart.transform.localPosition = Vector3.right;
+            // 縦 → 横
+            if (gridX < BoardManager.Width - 1)
+            {
+                isVertical = false;
+                rightPart.transform.localPosition = Vector3.right;
+            }
         }
     }
 
@@ -165,5 +173,14 @@ public class Capsule : MonoBehaviour
         isLanded = true;
 
         Debug.Log("着地完了");
+
+        Invoke(nameof(SpawnNextCapsule), 0.5f);
+    }
+
+    private void SpawnNextCapsule()
+    {
+        GameManager.Instance.SpawnCapsule();
+
+        Destroy(gameObject);
     }
 }

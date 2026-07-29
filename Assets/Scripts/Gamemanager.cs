@@ -2,10 +2,18 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+    public static GameManager Instance { get; private set; }
+
+    [Header("Prefab")]
     [SerializeField]
     private GameObject capsulePrefab;
 
     private Capsule currentCapsule;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     private void Start()
     {
@@ -15,9 +23,7 @@ public class GameManager : MonoBehaviour
     public void SpawnCapsule()
     {
         GameObject obj = Instantiate(
-            capsulePrefab,
-            Vector3.zero,
-            Quaternion.identity);
+            capsulePrefab);
 
         currentCapsule = obj.GetComponent<Capsule>();
     }
