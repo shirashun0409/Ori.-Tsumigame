@@ -13,6 +13,7 @@ public class BoardManager : MonoBehaviour
     [SerializeField]
     private float cellSize = 1.0f;
     // 盤面データ
+
     private CapsulePart[,] board;
     // 盤面の左上座標
     private Vector2 boardOrigin;
@@ -101,4 +102,13 @@ public class BoardManager : MonoBehaviour
         left.transform.SetParent(transform);
         right.transform.SetParent(transform);
     }
+    public void SetPart(int x, int y, CapsulePart part)
+    {
+        board[x, y] = part;
+    }
+    public CapsulePart GetPart(int x, int y)
+    {
+        return board[x, y];
+    }
 }
+
