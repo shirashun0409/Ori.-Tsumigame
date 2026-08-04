@@ -44,14 +44,7 @@ public class BoardManager : MonoBehaviour
             boardOrigin.y - y * cellSize,
             0f);
     }
-    public void SetCell(int x, int y, CapsulePart part)
-    {
-        board[x, y] = part;
-    }
-    public CapsulePart GetCell(int x, int y)
-    {
-        return board[x, y];
-    }
+
     public bool IsEmpty(int x, int y)
     {
         return board[x, y] == null;
@@ -98,9 +91,24 @@ public class BoardManager : MonoBehaviour
             board[x + 1, y] = rightPart;
         }
 
-        // BoardManagerの子にして、位置を固定する
+        // BoardManagerの子にする
         left.transform.SetParent(transform);
         right.transform.SetParent(transform);
+
+        // ワールド座標を維持する
+        left.transform.position =
+            GridToWorld(x, y);
+
+        if (vertical)
+        {
+            right.transform.position =
+                GridToWorld(x, y - 1);
+        }
+        else
+        {
+            right.transform.position =
+                GridToWorld(x + 1, y);
+        }
     }
     public void SetPart(int x, int y, CapsulePart part)
     {
@@ -109,6 +117,16 @@ public class BoardManager : MonoBehaviour
     public CapsulePart GetPart(int x, int y)
     {
         return board[x, y];
+    }
+    public bool IsOccupied(int x, int y)
+    {
+        // 盤面の外は埋まっているものとして扱う
+        if (!IsInsideBoard(x, y))
+        {
+            return true;
+        }
+
+        return board[x, y] != null;
     }
 }
 

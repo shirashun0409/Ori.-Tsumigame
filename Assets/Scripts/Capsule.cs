@@ -87,7 +87,7 @@ public class Capsule : MonoBehaviour
 
         if (fallTimer >= interval)
         {
-            if (gridY < BoardManager.Height - 1)
+            if (CanFall())
             {
                 gridY++;
                 UpdatePosition();
@@ -96,12 +96,28 @@ public class Capsule : MonoBehaviour
             {
                 Land();
             }
-
             fallTimer = 0f;
         }
     }
 
+    private bool CanFall()
+    {
+        if (gridY >= BoardManager.Height - 1)
+            return false;
 
+        if (isVertical)
+        {
+            // 縦向き：下側のパーツだけ判定
+            return !BoardManager.Instance.IsOccupied(gridX, gridY + 1);
+        }
+        else
+        {
+            // 横向き：左右両方の下を判定
+            return
+                !BoardManager.Instance.IsOccupied(gridX, gridY + 1) &&
+                !BoardManager.Instance.IsOccupied(gridX + 1, gridY + 1);
+        }
+    }
     //----------------------------------------------------
     // 回転
     //----------------------------------------------------
@@ -171,6 +187,14 @@ public class Capsule : MonoBehaviour
     private void Land()
     {
         isLanded = true;
+
+        // 盤面に固定
+        BoardManager.Instance.PlaceCapsule(
+            gridX,
+            gridY,
+            isVertical,
+            leftPart,
+            rightPart);
 
         Debug.Log("着地完了");
 
