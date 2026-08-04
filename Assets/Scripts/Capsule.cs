@@ -20,8 +20,18 @@ public class Capsule : MonoBehaviour
     private int gridX = 3;
     private int gridY = 0;
 
-    // false=横　true=縦
-    private bool isVertical = false;
+    // 回転状態 0=右 1=上 2=左 3=下 (rightPartがleftPartから見てどの方向にあるか)
+    private int rotation = 0;
+
+    // 回転状態ごとのグリッド上のオフセット（Yは下方向がプラス）
+    private static readonly Vector2Int[] Directions =
+    {
+    new Vector2Int(1, 0),   // 右
+    new Vector2Int(0, -1),  // 上
+    new Vector2Int(-1, 0),  // 左
+    new Vector2Int(0, 1),   // 下
+};
+
 
     // カプセルのパーツ
     private GameObject leftPart;
@@ -51,25 +61,31 @@ public class Capsule : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
-            if (gridX > 0)
-            {
-                gridX--;
-                UpdatePosition();
-            }
+            TryMove(-1);
         }
 
         if (Input.GetKeyDown(KeyCode.RightArrow))
         {
             int maxX = isVertical ? BoardManager.Width - 1 : BoardManager.Width - 2;
 
-            if (gridX < maxX)
-            {
-                gridX++;
-                UpdatePosition();
-            }
+            TryMove(1);
         }
     }
+    private void TryMove(int dx)
+    {
+        Vector2Int dir = Directions[rotation];
 
+        int newX = gridX + dx;
+
+        // 移動先で両パーツが盤面内かつ空いているか
+        if (BoardManager.Instance.IsOccupied(newX, gridY))
+            return;
+
+        if (BoardManager.Instance.IsOccupied(newX + dir.x, gridY + dir.y))
+            return;
+
+        gridX = newX;
+        UpdatePosition();
     //----------------------------------------------------
     // 落下
     //----------------------------------------------------
@@ -102,21 +118,22 @@ public class Capsule : MonoBehaviour
 
     private bool CanFall()
     {
-        if (gridY >= BoardManager.Height - 1)
-            return false;
+        Vector2Int dir = Directions[rotation];
 
-        if (isVertical)
-        {
-            // 縦向き：下側のパーツだけ判定
-            return !BoardManager.Instance.IsOccupied(gridX, gridY + 1);
-        }
-        else
-        {
-            // 横向き：左右両方の下を判定
-            return
-                !BoardManager.Instance.IsOccupied(gridX, gridY + 1) &&
-                !BoardManager.Instance.IsOccupied(gridX + 1, gridY + 1);
-        }
+        int subX = gridX + dir.x;
+        int subY = gridY + dir.y;
+
+        return
+            CanOccupy(gridX, gridY + 1, subX, subY) &&
+            CanOccupy(subX, subY + 1, gridX, gridY);
+    }
+
+    private bool CanOccupy(int x, int y, int otherPartX, int otherPartY)
+    {
+        if (x == otherPartX && y == otherPartY)
+            return true;
+
+        return !BoardManager.Instance.IsOccupied(x, y);
     }
     //----------------------------------------------------
     // 回転
@@ -127,25 +144,18 @@ public class Capsule : MonoBehaviour
         if (!Input.GetKeyDown(KeyCode.Space))
             return;
 
-        if (!isVertical)
-        {
-            // 横 → 縦
-            if (gridY > 0)
-            {
-                isVertical = true;
-                rightPart.transform.localPosition = Vector3.up;
-            }
-        }
-        else
-        {
-            // 縦 → 横
-            if (gridX < BoardManager.Width - 1)
-            {
-                isVertical = false;
-                rightPart.transform.localPosition = Vector3.right;
-            }
-        }
-    }
+        // 右 → 上 → 左 → 下 → 右 … の順に一周
+        int newRotation = (rotation + 1) % 4;
+        Vector2Int dir = Directions[newRotation];
+
+        // 回転先が盤面外または埋まっていたら回転しない
+        if (BoardManager.Instance.IsOccupied(gridX + dir.x, gridY + dir.y))
+            return;
+
+        rotation = newRotation;
+
+        // グリッドYは下がプラスなのでワールドでは符号反転
+        rightPart.transform.localPosition = new Vector3(dir.x, -dir.y, 0f);
 
     //----------------------------------------------------
     // カプセル生成
@@ -187,12 +197,14 @@ public class Capsule : MonoBehaviour
     private void Land()
     {
         isLanded = true;
+        Vector2Int dir = Directions[rotation];
 
         // 盤面に固定
         BoardManager.Instance.PlaceCapsule(
             gridX,
             gridY,
-            isVertical,
+            gridX + dir.x,
+            gridY + dir.y,
             leftPart,
             rightPart);
 
