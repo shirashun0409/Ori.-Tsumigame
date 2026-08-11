@@ -71,44 +71,24 @@ public class BoardManager : MonoBehaviour
         }
     }
     public void PlaceCapsule(
-    int x,
-    int y,
-    bool vertical,
-    GameObject left,
-    GameObject right)
+        int leftX,
+        int leftY,
+        int rightX,
+        int rightY,
+        GameObject left,
+        GameObject right)
     {
         CapsulePart leftPart = left.GetComponent<CapsulePart>();
         CapsulePart rightPart = right.GetComponent<CapsulePart>();
 
-        board[x, y] = leftPart;
+        board[leftX, leftY] = leftPart;
+        board[rightX, rightY] = rightPart;
 
-        if (vertical)
-        {
-            board[x, y - 1] = rightPart;
-        }
-        else
-        {
-            board[x + 1, y] = rightPart;
-        }
-
-        // BoardManagerの子にする
         left.transform.SetParent(transform);
         right.transform.SetParent(transform);
 
-        // ワールド座標を維持する
-        left.transform.position =
-            GridToWorld(x, y);
-
-        if (vertical)
-        {
-            right.transform.position =
-                GridToWorld(x, y - 1);
-        }
-        else
-        {
-            right.transform.position =
-                GridToWorld(x + 1, y);
-        }
+        left.transform.position = GridToWorld(leftX, leftY);
+        right.transform.position = GridToWorld(rightX, rightY);
     }
     public void SetPart(int x, int y, CapsulePart part)
     {

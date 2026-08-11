@@ -16,22 +16,21 @@ public class Capsule : MonoBehaviour
     private float fallTimer;
 
     private bool isLanded = false;
-    // グリッド座標
+    // グリッド座標（leftPart の位置）
     private int gridX = 3;
     private int gridY = 0;
 
-    // 回転状態 0=右 1=上 2=左 3=下 (rightPartがleftPartから見てどの方向にあるか)
+    // 回転状態 0=右, 1=上, 2=左, 3=下（rightPart が leftPart から見てどの方向にあるか）
     private int rotation = 0;
 
-    // 回転状態ごとのグリッド上のオフセット（Yは下方向がプラス）
+    // 回転状態ごとのグリッド上オフセット（Y は下方向がプラス）
     private static readonly Vector2Int[] Directions =
     {
-    new Vector2Int(1, 0),   // 右
-    new Vector2Int(0, -1),  // 上
-    new Vector2Int(-1, 0),  // 左
-    new Vector2Int(0, 1),   // 下
-};
-
+        new Vector2Int(1, 0),  // 右
+        new Vector2Int(0, -1), // 上
+        new Vector2Int(-1, 0), // 左
+        new Vector2Int(0, 1)   // 下
+    };
 
     // カプセルのパーツ
     private GameObject leftPart;
@@ -66,11 +65,10 @@ public class Capsule : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.RightArrow))
         {
-            int maxX = isVertical ? BoardManager.Width - 1 : BoardManager.Width - 2;
-
             TryMove(1);
         }
     }
+
     private void TryMove(int dx)
     {
         Vector2Int dir = Directions[rotation];
@@ -86,6 +84,8 @@ public class Capsule : MonoBehaviour
 
         gridX = newX;
         UpdatePosition();
+    }
+
     //----------------------------------------------------
     // 落下
     //----------------------------------------------------
@@ -93,7 +93,6 @@ public class Capsule : MonoBehaviour
     private void Fall()
     {
         float interval = fallInterval;
-
         if (Input.GetKey(KeyCode.DownArrow))
         {
             interval = fastFallInterval;
@@ -123,6 +122,7 @@ public class Capsule : MonoBehaviour
         int subX = gridX + dir.x;
         int subY = gridY + dir.y;
 
+        // 各パーツの1マス下を判定（相方パーツのいるマスは空き扱い）
         return
             CanOccupy(gridX, gridY + 1, subX, subY) &&
             CanOccupy(subX, subY + 1, gridX, gridY);
@@ -135,6 +135,7 @@ public class Capsule : MonoBehaviour
 
         return !BoardManager.Instance.IsOccupied(x, y);
     }
+
     //----------------------------------------------------
     // 回転
     //----------------------------------------------------
@@ -144,7 +145,7 @@ public class Capsule : MonoBehaviour
         if (!Input.GetKeyDown(KeyCode.Space))
             return;
 
-        // 右 → 上 → 左 → 下 → 右 … の順に一周
+        // 右 → 上 → 左 → 下 → 右... の順に一周（反時計回り）
         int newRotation = (rotation + 1) % 4;
         Vector2Int dir = Directions[newRotation];
 
@@ -153,9 +154,8 @@ public class Capsule : MonoBehaviour
             return;
 
         rotation = newRotation;
-
-        // グリッドYは下がプラスなのでワールドでは符号反転
-        rightPart.transform.localPosition = new Vector3(dir.x, -dir.y, 0f);
+        UpdatePartPositions();
+    }
 
     //----------------------------------------------------
     // カプセル生成
@@ -164,7 +164,7 @@ public class Capsule : MonoBehaviour
     private void CreateCapsule()
     {
         leftPart = CreatePart(Vector3.zero);
-        rightPart = CreatePart(Vector3.right);
+        rightPart = CreatePart(GetSubPartLocalPosition());
     }
 
     private GameObject CreatePart(Vector3 localPos)
@@ -193,13 +193,28 @@ public class Capsule : MonoBehaviour
     {
         transform.position =
             BoardManager.Instance.GridToWorld(gridX, gridY);
+        UpdatePartPositions();
     }
+
+    private void UpdatePartPositions()
+    {
+        leftPart.transform.localPosition = Vector3.zero;
+        rightPart.transform.localPosition = GetSubPartLocalPosition();
+    }
+
+    private Vector3 GetSubPartLocalPosition()
+    {
+        Vector2Int dir = Directions[rotation];
+        // グリッド Y は下がプラスなのでワールド座標は符号反転
+        return new Vector3(dir.x, -dir.y, 0f);
+    }
+
     private void Land()
     {
         isLanded = true;
+
         Vector2Int dir = Directions[rotation];
 
-        // 盤面に固定
         BoardManager.Instance.PlaceCapsule(
             gridX,
             gridY,
