@@ -108,5 +108,21 @@ public class BoardManager : MonoBehaviour
 
         return board[x, y] != null;
     }
+
+    public void RemovePart(int x, int y)
+    {
+        if (!IsInsideBoard(x, y))
+            return;
+
+        CapsulePart part = board[x, y];
+
+        if (part == null)
+            return;
+
+        board[x, y] = null;
+
+        Destroy(part.gameObject);
+    }
 }
+
 

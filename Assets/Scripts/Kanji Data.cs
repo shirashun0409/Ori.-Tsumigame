@@ -18,5 +18,5 @@ public class KanjiData : ScriptableObject
     public string[] readings;
 
     [Header("二字熟語")]
-    public string[] idioms;
+    public string[] idiomPartners;
 }

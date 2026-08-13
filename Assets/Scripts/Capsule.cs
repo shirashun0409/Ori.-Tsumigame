@@ -185,7 +185,7 @@ public class Capsule : MonoBehaviour
 
         if (kanjiData != null)
         {
-            part.SetKanji(kanjiData.sprite);
+            part.SetKanji(kanjiData);
         }
 
         return obj;
@@ -231,9 +231,14 @@ public class Capsule : MonoBehaviour
 
         Debug.Log("着地完了");
 
+        // 熟語モードなら熟語を探して消す
+        if (GameManager.Instance.IsIdiomMode())
+        {
+            KanjiMatchFinder.RemoveIdiomMatches();
+        }
+
         Invoke(nameof(SpawnNextCapsule), 0.5f);
     }
-
     private void SpawnNextCapsule()
     {
         GameManager.Instance.SpawnCapsule();
