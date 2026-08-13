@@ -9,21 +9,8 @@ public class CapsulePart : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
-    public void SetColor(CapsuleColor color)
+    public void SetKanji(Sprite kanjiSprite)
     {
-        switch (color)
-        {
-            case CapsuleColor.Red:
-                spriteRenderer.color = Color.red;
-                break;
-
-            case CapsuleColor.Blue:
-                spriteRenderer.color = Color.blue;
-                break;
-
-            case CapsuleColor.Yellow:
-                spriteRenderer.color = Color.yellow;
-                break;
-        }
+        spriteRenderer.sprite = kanjiSprite;
     }
 }

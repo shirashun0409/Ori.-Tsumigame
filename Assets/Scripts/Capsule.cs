@@ -6,6 +6,10 @@ public class Capsule : MonoBehaviour
     [SerializeField]
     private GameObject capsulePartPrefab;
 
+    [Header("Kanji")]
+    [SerializeField]
+    private KanjiDatabase kanjiDatabase;
+
     [Header("Fall")]
     [SerializeField]
     private float fallInterval = 1.0f;
@@ -177,10 +181,12 @@ public class Capsule : MonoBehaviour
 
         CapsulePart part = obj.GetComponent<CapsulePart>();
 
-        CapsuleColor color =
-            (CapsuleColor)Random.Range(0, 3);
+        KanjiData kanjiData = kanjiDatabase.GetRandomKanji();
 
-        part.SetColor(color);
+        if (kanjiData != null)
+        {
+            part.SetKanji(kanjiData.sprite);
+        }
 
         return obj;
     }

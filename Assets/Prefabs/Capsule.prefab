@@ -45,5 +45,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Capsule
   capsulePartPrefab: {fileID: 509304814439273617, guid: 6378a8a9e711dae4f9a4c8b4609a293e, type: 3}
+  kanjiDatabase: {fileID: 11400000, guid: af74d908d8e2ff946b8013c48362122e, type: 2}
   fallInterval: 1
   fastFallInterval: 0.1
