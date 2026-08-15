@@ -3,50 +3,29 @@ using UnityEngine;
 public static class KanjiMatcher
 {
     /// <summary>
-    /// 2つの漢字が熟語として成立するか判定します。
-    /// 順番は問いません。
+    /// first → second の順番で正しい二字熟語になるか判定します。
+    /// 順番は入れ替えません。
     /// </summary>
     public static bool IsIdiomMatch(
-    KanjiData first,
-    KanjiData second)
+        KanjiData first,
+        KanjiData second)
     {
         if (first == null || second == null)
         {
-            Debug.Log("KanjiDataがnullです");
             return false;
         }
 
-        Debug.Log(
-            "熟語判定: " +
-            first.kanji + " + " +
-            second.kanji);
-
+        // 同じ漢字同士は熟語として扱わない
         if (first.kanji == second.kanji)
         {
             return false;
         }
 
+        // first → second の順番だけを確認
         if (ContainsPartner(first, second.kanji))
         {
-            Debug.Log(
-                "熟語成立: " +
-                first.kanji + " + " +
-                second.kanji);
-
             return true;
         }
-
-        if (ContainsPartner(second, first.kanji))
-        {
-            Debug.Log(
-                "熟語成立: " +
-                second.kanji + " + " +
-                first.kanji);
-
-            return true;
-        }
-
-        Debug.Log("熟語不成立");
 
         return false;
     }

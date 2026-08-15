@@ -18,6 +18,12 @@ public class BoardManager : MonoBehaviour
     // 盤面の左上座標
     private Vector2 boardOrigin;
 
+    // 消去後の漢字の落下速度
+    [SerializeField]
+    private float gravityFallInterval = 0.5f;
+
+    // 現在落下中か
+    private bool isGravityFalling = false;
     private void Awake()
     {
         Instance = this;
@@ -122,6 +128,58 @@ public class BoardManager : MonoBehaviour
         board[x, y] = null;
 
         Destroy(part.gameObject);
+    }
+    public void ApplyGravity()
+    {
+        if (isGravityFalling)
+            return;
+
+        StartCoroutine(GravityFallCoroutine());
+    }
+    private System.Collections.IEnumerator GravityFallCoroutine()
+    {
+        isGravityFalling = true;
+
+        bool moved;
+
+        do
+        {
+            moved = false;
+
+            for (int x = 0; x < Width; x++)
+            {
+                for (int y = Height - 2; y >= 0; y--)
+                {
+                    CapsulePart part = board[x, y];
+
+                    if (part == null)
+                        continue;
+
+                    // 真下が空いているか
+                    if (board[x, y + 1] == null)
+                    {
+                        board[x, y + 1] = part;
+                        board[x, y] = null;
+
+                        // 1マスだけ下へ移動
+                        part.transform.position =
+                            GridToWorld(x, y + 1);
+
+                        moved = true;
+                    }
+                }
+            }
+
+            // 1マス落ちるたびに待つ
+            if (moved)
+            {
+                yield return new WaitForSeconds(
+                    gravityFallInterval);
+            }
+
+        } while (moved);
+
+        isGravityFalling = false;
     }
 }
 

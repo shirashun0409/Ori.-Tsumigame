@@ -90,18 +90,17 @@ public static class KanjiMatchFinder
         HashSet<Vector2Int> uniqueMatches =
             new HashSet<Vector2Int>(matches);
 
-        Debug.Log("熟語候補の数: " + uniqueMatches.Count);
+        if (uniqueMatches.Count == 0)
+            return;
 
         foreach (Vector2Int position in uniqueMatches)
         {
-            Debug.Log(
-                "熟語として消去: (" +
-                position.x + ", " +
-                position.y + ")");
-
             BoardManager.Instance.RemovePart(
                 position.x,
                 position.y);
         }
+
+        // 消えたあとに漢字を落とす
+        BoardManager.Instance.ApplyGravity();
     }
 }

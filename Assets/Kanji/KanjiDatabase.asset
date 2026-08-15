@@ -15,3 +15,4 @@ MonoBehaviour:
   kanjiList:
   - {fileID: 11400000, guid: ea5a66ba376218e49af3483dc3776f6d, type: 2}
   - {fileID: 11400000, guid: 60a257fd25d4aeb41834538c0c03abec, type: 2}
+  - {fileID: 11400000, guid: d318955ff772b354aae32bebd9eadba8, type: 2}
