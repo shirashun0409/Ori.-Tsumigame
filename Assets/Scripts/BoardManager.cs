@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,9 +14,10 @@ public class BoardManager : MonoBehaviour
 
     [SerializeField]
     private float cellSize = 1.0f;
-    // 盤面データ
 
+    // 盤面データ
     private CapsulePart[,] board;
+
     // 盤面の左上座標
     private Vector2 boardOrigin;
 
@@ -23,14 +25,20 @@ public class BoardManager : MonoBehaviour
     [SerializeField]
     private float gravityFallInterval = 0.5f;
 
-    // 現在落下中か
+    // 現在重力落下中か
     private bool isGravityFalling = false;
+
+    // 現在連鎖処理中か
+    private bool isChainProcessing = false;
+
+
     private void Awake()
     {
         Instance = this;
 
         board = new CapsulePart[Width, Height];
     }
+
 
     private void Start()
     {
@@ -40,6 +48,7 @@ public class BoardManager : MonoBehaviour
 
         CreateBoard();
     }
+
 
     /// <summary>
     /// マス座標をUnity座標へ変換
@@ -52,10 +61,13 @@ public class BoardManager : MonoBehaviour
             0f);
     }
 
+
     public bool IsEmpty(int x, int y)
     {
         return board[x, y] == null;
     }
+
+
     public bool IsInsideBoard(int x, int y)
     {
         return x >= 0 &&
@@ -63,6 +75,8 @@ public class BoardManager : MonoBehaviour
                y >= 0 &&
                y < Height;
     }
+
+
     private void CreateBoard()
     {
         for (int y = 0; y < Height; y++)
@@ -77,6 +91,8 @@ public class BoardManager : MonoBehaviour
             }
         }
     }
+
+
     public void PlaceCapsule(
         int leftX,
         int leftY,
@@ -85,8 +101,11 @@ public class BoardManager : MonoBehaviour
         GameObject left,
         GameObject right)
     {
-        CapsulePart leftPart = left.GetComponent<CapsulePart>();
-        CapsulePart rightPart = right.GetComponent<CapsulePart>();
+        CapsulePart leftPart =
+            left.GetComponent<CapsulePart>();
+
+        CapsulePart rightPart =
+            right.GetComponent<CapsulePart>();
 
         board[leftX, leftY] = leftPart;
         board[rightX, rightY] = rightPart;
@@ -94,17 +113,29 @@ public class BoardManager : MonoBehaviour
         left.transform.SetParent(transform);
         right.transform.SetParent(transform);
 
-        left.transform.position = GridToWorld(leftX, leftY);
-        right.transform.position = GridToWorld(rightX, rightY);
+        left.transform.position =
+            GridToWorld(leftX, leftY);
+
+        right.transform.position =
+            GridToWorld(rightX, rightY);
     }
-    public void SetPart(int x, int y, CapsulePart part)
+
+
+    public void SetPart(
+        int x,
+        int y,
+        CapsulePart part)
     {
         board[x, y] = part;
     }
+
+
     public CapsulePart GetPart(int x, int y)
     {
         return board[x, y];
     }
+
+
     public bool IsOccupied(int x, int y)
     {
         // 盤面の外は埋まっているものとして扱う
@@ -115,6 +146,7 @@ public class BoardManager : MonoBehaviour
 
         return board[x, y] != null;
     }
+
 
     public void RemovePart(int x, int y)
     {
@@ -130,15 +162,17 @@ public class BoardManager : MonoBehaviour
 
         Destroy(part.gameObject);
     }
+
+
+    //==================================================
+    // 重力落下
+    //==================================================
+
     public bool IsGravityFalling()
     {
         return isGravityFalling;
     }
 
-    public bool HasGravityFinished()
-    {
-        return !isGravityFalling;
-    }
 
     public void ApplyGravity()
     {
@@ -148,53 +182,8 @@ public class BoardManager : MonoBehaviour
         StartCoroutine(GravityFallCoroutine());
     }
 
-    public void StartChainCheck()
-    {
-        StartCoroutine(ChainCheckCoroutine());
-    }
 
-    private System.Collections.IEnumerator ChainCheckCoroutine()
-    {
-        while (true)
-        {
-            // 熟語を探す
-            List<Vector2Int> matches =
-                KanjiMatchFinder.FindIdiomMatches();
-
-            HashSet<Vector2Int> uniqueMatches =
-                new HashSet<Vector2Int>(matches);
-
-            // 熟語がなければ連鎖終了
-            if (uniqueMatches.Count == 0)
-            {
-                break;
-            }
-
-            // 熟語を消す
-            foreach (Vector2Int position in uniqueMatches)
-            {
-                RemovePart(
-                    position.x,
-                    position.y);
-            }
-
-            // 落下開始
-            ApplyGravity();
-
-            // 落下が始まるまで1フレーム待つ
-            yield return null;
-
-            // 全部落ち終わるまで待つ
-            while (isGravityFalling)
-            {
-                yield return null;
-            }
-
-            // 落下後、whileの最初に戻って
-            // もう一度熟語を探す
-        }
-    }
-    private System.Collections.IEnumerator GravityFallCoroutine()
+    private IEnumerator GravityFallCoroutine()
     {
         isGravityFalling = true;
 
@@ -214,13 +203,13 @@ public class BoardManager : MonoBehaviour
                     if (part == null)
                         continue;
 
-                    // 1マス下が空いている場合だけ落とす
+                    // 真下が空いている場合
                     if (board[x, y + 1] == null)
                     {
                         board[x, y + 1] = part;
                         board[x, y] = null;
 
-                        // 必ず1マスだけ移動
+                        // 1マスだけ移動
                         part.transform.position =
                             GridToWorld(x, y + 1);
 
@@ -229,7 +218,7 @@ public class BoardManager : MonoBehaviour
                 }
             }
 
-            // 1マス落ちるたびに0.5秒待つ
+            // 1マス落ちるたびに待つ
             if (moved)
             {
                 yield return new WaitForSeconds(
@@ -239,5 +228,78 @@ public class BoardManager : MonoBehaviour
         } while (moved);
 
         isGravityFalling = false;
+    }
+
+
+    //==================================================
+    // 連鎖処理
+    //==================================================
+
+    public void StartChain()
+    {
+        if (isChainProcessing)
+            return;
+
+        StartCoroutine(ChainCoroutine());
+    }
+
+
+    private IEnumerator ChainCoroutine()
+    {
+        isChainProcessing = true;
+
+        while (true)
+        {
+            // 現在の盤面から熟語を探す
+            List<Vector2Int> matches =
+                KanjiMatchFinder.FindIdiomMatches();
+
+            HashSet<Vector2Int> uniqueMatches =
+                new HashSet<Vector2Int>(matches);
+
+            // 熟語がなければ連鎖終了
+            if (uniqueMatches.Count == 0)
+            {
+                break;
+            }
+
+            Debug.Log(
+                "熟語を発見！ " +
+                uniqueMatches.Count +
+                "個の漢字を消します。");
+
+            // 熟語を全部消す
+            foreach (Vector2Int position in uniqueMatches)
+            {
+                RemovePart(
+                    position.x,
+                    position.y);
+            }
+
+            // 消えたあとに落下開始
+            ApplyGravity();
+
+            // 重力処理が開始されるまで1フレーム待つ
+            yield return null;
+
+            // 全部落ち終わるまで待つ
+            while (isGravityFalling)
+            {
+                yield return null;
+            }
+
+            // ここでwhileの最初に戻る
+            // → 落下後に新しい熟語ができていないか確認
+        }
+
+        isChainProcessing = false;
+
+        Debug.Log("連鎖終了！");
+    }
+
+
+    public bool IsChainProcessing()
+    {
+        return isChainProcessing;
     }
 }

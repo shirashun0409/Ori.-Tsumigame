@@ -8,23 +8,32 @@ public static class KanjiMatchFinder
     /// </summary>
     public static List<Vector2Int> FindIdiomMatches()
     {
-        List<Vector2Int> matches = new List<Vector2Int>();
+        List<Vector2Int> matches =
+            new List<Vector2Int>();
 
-        BoardManager board = BoardManager.Instance;
+        BoardManager board =
+            BoardManager.Instance;
 
-        for (int y = 0; y < BoardManager.Height; y++)
+        for (int y = 0;
+             y < BoardManager.Height;
+             y++)
         {
-            for (int x = 0; x < BoardManager.Width; x++)
+            for (int x = 0;
+                 x < BoardManager.Width;
+                 x++)
             {
-                CapsulePart currentPart = board.GetPart(x, y);
+                CapsulePart currentPart =
+                    board.GetPart(x, y);
 
                 if (currentPart == null)
                     continue;
 
-                KanjiData currentKanji = currentPart.GetKanjiData();
+                KanjiData currentKanji =
+                    currentPart.GetKanjiData();
 
                 if (currentKanji == null)
                     continue;
+
 
                 // 右隣を確認
                 if (x + 1 < BoardManager.Width)
@@ -37,6 +46,7 @@ public static class KanjiMatchFinder
                         currentKanji,
                         matches);
                 }
+
 
                 // 下隣を確認
                 if (y + 1 < BoardManager.Height)
@@ -54,6 +64,7 @@ public static class KanjiMatchFinder
 
         return matches;
     }
+
 
     private static void CheckPair(
         int x1,
@@ -75,32 +86,16 @@ public static class KanjiMatchFinder
         if (secondKanji == null)
             return;
 
+
         if (KanjiMatcher.IsIdiomMatch(
             firstKanji,
             secondKanji))
         {
-            matches.Add(new Vector2Int(x1, y1));
-            matches.Add(new Vector2Int(x2, y2));
+            matches.Add(
+                new Vector2Int(x1, y1));
+
+            matches.Add(
+                new Vector2Int(x2, y2));
         }
-    }
-    public static void RemoveIdiomMatches()
-    {
-        List<Vector2Int> matches = FindIdiomMatches();
-
-        HashSet<Vector2Int> uniqueMatches =
-            new HashSet<Vector2Int>(matches);
-
-        if (uniqueMatches.Count == 0)
-            return;
-
-        foreach (Vector2Int position in uniqueMatches)
-        {
-            BoardManager.Instance.RemovePart(
-                position.x,
-                position.y);
-        }
-
-        // 消えたあとに漢字を落とす
-        BoardManager.Instance.ApplyGravity();
     }
 }

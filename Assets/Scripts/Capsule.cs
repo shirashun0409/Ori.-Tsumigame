@@ -227,19 +227,33 @@ public class Capsule : MonoBehaviour
 
         Debug.Log("着地完了");
 
-        // 熟語モードなら熟語を探して消す
         if (GameManager.Instance.IsIdiomMode())
         {
-            BoardManager.Instance.StartChainCheck();
+            BoardManager.Instance.StartChain();
 
-            StartCoroutine(WaitForGravityAndSpawn());
+            StartCoroutine(WaitForChainAndSpawn());
         }
         else
         {
-            // 熟語モード以外ならすぐ次へ
             SpawnNextCapsule();
         }
     }
+
+    private System.Collections.IEnumerator WaitForChainAndSpawn()
+    {
+        // 連鎖処理が始まるのを待つ
+        yield return null;
+
+        // 連鎖が完全に終わるまで待つ
+        while (BoardManager.Instance.IsChainProcessing())
+        {
+            yield return null;
+        }
+
+        // 連鎖終了
+        SpawnNextCapsule();
+    }
+
 
     private System.Collections.IEnumerator WaitForGravityAndSpawn()
     {
