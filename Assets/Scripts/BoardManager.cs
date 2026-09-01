@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class BoardManager : MonoBehaviour
@@ -129,12 +130,69 @@ public class BoardManager : MonoBehaviour
 
         Destroy(part.gameObject);
     }
+    public bool IsGravityFalling()
+    {
+        return isGravityFalling;
+    }
+
+    public bool HasGravityFinished()
+    {
+        return !isGravityFalling;
+    }
+
     public void ApplyGravity()
     {
         if (isGravityFalling)
             return;
 
         StartCoroutine(GravityFallCoroutine());
+    }
+
+    public void StartChainCheck()
+    {
+        StartCoroutine(ChainCheckCoroutine());
+    }
+
+    private System.Collections.IEnumerator ChainCheckCoroutine()
+    {
+        while (true)
+        {
+            // 熟語を探す
+            List<Vector2Int> matches =
+                KanjiMatchFinder.FindIdiomMatches();
+
+            HashSet<Vector2Int> uniqueMatches =
+                new HashSet<Vector2Int>(matches);
+
+            // 熟語がなければ連鎖終了
+            if (uniqueMatches.Count == 0)
+            {
+                break;
+            }
+
+            // 熟語を消す
+            foreach (Vector2Int position in uniqueMatches)
+            {
+                RemovePart(
+                    position.x,
+                    position.y);
+            }
+
+            // 落下開始
+            ApplyGravity();
+
+            // 落下が始まるまで1フレーム待つ
+            yield return null;
+
+            // 全部落ち終わるまで待つ
+            while (isGravityFalling)
+            {
+                yield return null;
+            }
+
+            // 落下後、whileの最初に戻って
+            // もう一度熟語を探す
+        }
     }
     private System.Collections.IEnumerator GravityFallCoroutine()
     {
@@ -146,22 +204,23 @@ public class BoardManager : MonoBehaviour
         {
             moved = false;
 
-            for (int x = 0; x < Width; x++)
+            // 下の行から上へ調べる
+            for (int y = Height - 2; y >= 0; y--)
             {
-                for (int y = Height - 2; y >= 0; y--)
+                for (int x = 0; x < Width; x++)
                 {
                     CapsulePart part = board[x, y];
 
                     if (part == null)
                         continue;
 
-                    // 真下が空いているか
+                    // 1マス下が空いている場合だけ落とす
                     if (board[x, y + 1] == null)
                     {
                         board[x, y + 1] = part;
                         board[x, y] = null;
 
-                        // 1マスだけ下へ移動
+                        // 必ず1マスだけ移動
                         part.transform.position =
                             GridToWorld(x, y + 1);
 
@@ -170,7 +229,7 @@ public class BoardManager : MonoBehaviour
                 }
             }
 
-            // 1マス落ちるたびに待つ
+            // 1マス落ちるたびに0.5秒待つ
             if (moved)
             {
                 yield return new WaitForSeconds(
@@ -182,5 +241,3 @@ public class BoardManager : MonoBehaviour
         isGravityFalling = false;
     }
 }
-
-

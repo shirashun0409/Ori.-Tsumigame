@@ -230,11 +230,32 @@ public class Capsule : MonoBehaviour
         // 熟語モードなら熟語を探して消す
         if (GameManager.Instance.IsIdiomMode())
         {
-            KanjiMatchFinder.RemoveIdiomMatches();
+            BoardManager.Instance.StartChainCheck();
+
+            StartCoroutine(WaitForGravityAndSpawn());
+        }
+        else
+        {
+            // 熟語モード以外ならすぐ次へ
+            SpawnNextCapsule();
+        }
+    }
+
+    private System.Collections.IEnumerator WaitForGravityAndSpawn()
+    {
+        // 重力落下が始まるのを待つ
+        yield return null;
+
+        // 重力落下中なら、終わるまで待つ
+        while (BoardManager.Instance.IsGravityFalling())
+        {
+            yield return null;
         }
 
-        Invoke(nameof(SpawnNextCapsule), 0.5f);
+        // 落下が完全に終わった
+        SpawnNextCapsule();
     }
+
     private void SpawnNextCapsule()
     {
         GameManager.Instance.SpawnCapsule();
