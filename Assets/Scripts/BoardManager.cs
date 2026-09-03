@@ -187,13 +187,11 @@ public class BoardManager : MonoBehaviour
     {
         isGravityFalling = true;
 
-        bool moved;
-
-        do
+        while (true)
         {
-            moved = false;
+            bool movedThisStep = false;
 
-            // 下の行から上へ調べる
+            // 下の行から上へ調べる（必ず1マスずつ）
             for (int y = Height - 2; y >= 0; y--)
             {
                 for (int x = 0; x < Width; x++)
@@ -203,29 +201,28 @@ public class BoardManager : MonoBehaviour
                     if (part == null)
                         continue;
 
-                    // 真下が空いている場合
+                    // 真下が空いている場合のみ1マス落とす
                     if (board[x, y + 1] == null)
                     {
                         board[x, y + 1] = part;
                         board[x, y] = null;
 
-                        // 1マスだけ移動
                         part.transform.position =
                             GridToWorld(x, y + 1);
 
-                        moved = true;
+                        movedThisStep = true;
                     }
                 }
             }
 
-            // 1マス落ちるたびに待つ
-            if (moved)
-            {
-                yield return new WaitForSeconds(
-                    gravityFallInterval);
-            }
+            // 1マスも動かなかったら終了
+            if (!movedThisStep)
+                break;
 
-        } while (moved);
+            // 1マス落ちるたびに待つ
+            yield return new WaitForSeconds(
+                gravityFallInterval);
+        }
 
         isGravityFalling = false;
     }
@@ -288,8 +285,8 @@ public class BoardManager : MonoBehaviour
                 yield return null;
             }
 
-            // ここでwhileの最初に戻る
-            // → 落下後に新しい熟語ができていないか確認
+            // 盤面が完全に安定するまでさらに1フレーム待つ
+            yield return null;
         }
 
         isChainProcessing = false;
