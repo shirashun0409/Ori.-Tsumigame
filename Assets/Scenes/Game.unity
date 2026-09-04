@@ -149,7 +149,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoardManager
   cellPrefab: {fileID: 4852646996343914918, guid: e083fd764555c1c41a3648bcab1a9238, type: 3}
-  cellSize: 1
+  cellSize: 1.5
+  gravityFallInterval: 0.5
 --- !u!4 &443642978
 Transform:
   m_ObjectHideFlags: 0
@@ -227,7 +228,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 9
+  orthographic size: 10
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -347,6 +348,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   capsulePrefab: {fileID: 4441344553771492615, guid: 746bf97528ee5314ba02abd6a36225be, type: 3}
+  currentMode: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

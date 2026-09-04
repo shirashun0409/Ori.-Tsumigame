@@ -7,7 +7,7 @@ public class BoardManager : MonoBehaviour
     public static BoardManager Instance { get; private set; }
 
     public const int Width = 8;
-    public const int Height = 16;
+    public const int Height = 12;
 
     [SerializeField]
     private GameObject cellPrefab;
