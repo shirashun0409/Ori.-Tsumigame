@@ -149,7 +149,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoardManager
   cellPrefab: {fileID: 4852646996343914918, guid: e083fd764555c1c41a3648bcab1a9238, type: 3}
-  cellSize: 1.5
+  cellSize: 1.1
   gravityFallInterval: 0.5
 --- !u!4 &443642978
 Transform:
@@ -228,7 +228,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 10
+  orthographic size: 7
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2

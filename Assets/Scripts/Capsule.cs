@@ -175,6 +175,9 @@ public class Capsule : MonoBehaviour
 
         obj.transform.localPosition = localPos;
 
+        // ★ 追加：パーツの大きさを固定（マスと揃える）
+        obj.transform.localScale = Vector3.one;
+
         CapsulePart part = obj.GetComponent<CapsulePart>();
 
         KanjiData kanjiData = KanjiDatabase.GetRandomKanji();
@@ -186,6 +189,7 @@ public class Capsule : MonoBehaviour
 
         return obj;
     }
+
 
     //----------------------------------------------------
     // 表示位置更新
@@ -207,8 +211,10 @@ public class Capsule : MonoBehaviour
     private Vector3 GetSubPartLocalPosition()
     {
         Vector2Int dir = Directions[rotation];
-        // グリッド Y は下がプラスなのでワールド座標は符号反転
-        return new Vector3(dir.x, -dir.y, 0f);
+        // ★ 距離を 1 → 0.9 にして「つながり感」を出す
+        float distance = 0.9f;
+
+        return new Vector3(dir.x * distance, -dir.y * distance, 0f);
     }
 
     private void Land()
