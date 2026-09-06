@@ -14,8 +14,14 @@ public class BoardManager : MonoBehaviour
 
     [SerializeField]
     private float cellSize = 1.0f;
+    // 盤面のマス間隔（落下中のカプセルも同じ間隔で並べる）
+    public float CellSize
+    {
+        get { return cellSize; }
+    }
 
     // 盤面データ
+
     private CapsulePart[,] board;
 
     // 盤面の左上座標

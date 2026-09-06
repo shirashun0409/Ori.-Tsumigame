@@ -210,12 +210,13 @@ public class Capsule : MonoBehaviour
 
     private Vector3 GetSubPartLocalPosition()
     {
+        float distance = BoardManager.Instance.CellSize;
         Vector2Int dir = Directions[rotation];
-        // ★ 距離を 1 → 0.9 にして「つながり感」を出す
-        float distance = 0.9f;
 
+        // グリッドYは下がプラスなので符号反転
         return new Vector3(dir.x * distance, -dir.y * distance, 0f);
     }
+
 
     private void Land()
     {
