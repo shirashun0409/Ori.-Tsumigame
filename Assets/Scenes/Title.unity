@@ -345,6 +345,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bbb698e7255ffa9429bf345665707707, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LogoRotate
+  angle: 5
+  speed: 2
 --- !u!64 &754663571
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -531,6 +533,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bbb698e7255ffa9429bf345665707707, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LogoRotate
+  angle: 5
+  speed: 2
 --- !u!64 &826572394
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -691,7 +695,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 49bcc89a0166f724dbd7955006c3bc17, type: 2}
+  - {fileID: 2100000, guid: ae63a0e828221c242a557c2fc6cad32f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
