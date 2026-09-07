@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: ShadowLogoMat
+  m_Name: LogoBorderingMat
   m_Shader: {fileID: 10760, guid: 0000000000000000f000000000000000, type: 0}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -28,7 +28,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 059bca0d38b846b4a9d943b4126073c4, type: 3}
+        m_Texture: {fileID: 2800000, guid: 60a2f411de7e7d74ea45efa5095d4b44, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MaskTex:
@@ -51,7 +51,7 @@ Material:
     - _UseUIAlphaClip: 0
     - _ZWrite: 0
     m_Colors:
-    - _Color: {r: 0.2196078, g: 0.2196078, b: 0.2196078, a: 0.43529412}
+    - _Color: {r: 1, g: 1, b: 1, a: 0.5647059}
     - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
