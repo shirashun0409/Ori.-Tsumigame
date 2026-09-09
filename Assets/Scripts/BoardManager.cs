@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
+
 
 public class BoardManager : MonoBehaviour
 {
@@ -166,8 +168,16 @@ public class BoardManager : MonoBehaviour
 
         board[x, y] = null;
 
-        Destroy(part.gameObject);
+        // ★ 消滅エフェクト（キュッと縮む）
+        part.transform.DOScale(0f, 0.15f).SetEase(Ease.InBack);
+
+        // ★ 消滅SE（ここが必要！）
+        GameManager.Instance.PlaySE(GameManager.Instance.eraseSE);
+
+        // 少し待ってから削除（エフェクトを見せるため）
+        Destroy(part.gameObject, 0.15f);
     }
+
 
 
     //==================================================
@@ -208,16 +218,20 @@ public class BoardManager : MonoBehaviour
                         continue;
 
                     // 真下が空いている場合のみ1マス落とす
+                    // 真下が空いている場合のみ1マス落とす
                     if (board[x, y + 1] == null)
                     {
                         board[x, y + 1] = part;
                         board[x, y] = null;
 
-                        part.transform.position =
-                            GridToWorld(x, y + 1);
+                        part.transform.position = GridToWorld(x, y + 1);
+
+                        // ★ ここに追加：落下エフェクト
+                        part.transform.DOScale(1.1f, 0.1f).SetLoops(2, LoopType.Yoyo);
 
                         movedThisStep = true;
                     }
+
                 }
             }
 
@@ -261,6 +275,7 @@ public class BoardManager : MonoBehaviour
                 new HashSet<Vector2Int>(matches);
 
             // 熟語がなければ連鎖終了
+
             if (uniqueMatches.Count == 0)
             {
                 break;
@@ -270,6 +285,10 @@ public class BoardManager : MonoBehaviour
                 "熟語を発見！ " +
                 uniqueMatches.Count +
                 "個の漢字を消します。");
+
+            // ★ 連鎖SE（ここが必要！）
+            GameManager.Instance.PlaySE(GameManager.Instance.comboSE);
+
 
             // 熟語を全部消す
             foreach (Vector2Int position in uniqueMatches)

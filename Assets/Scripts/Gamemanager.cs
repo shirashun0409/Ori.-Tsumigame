@@ -14,6 +14,18 @@ public class GameManager : MonoBehaviour
 
     private Capsule currentCapsule;
 
+    // ========================================
+    // ★ SE（効果音）追加部分
+    // ========================================
+
+    [Header("Sound Effects")]
+    public AudioClip dropSE;     // ← public に変更
+    public AudioClip eraseSE;    // ← public に変更
+    public AudioClip comboSE;    // ← public に変更
+    public AudioClip rotateSE;   // ← public に変更
+
+    private AudioSource audioSource;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -27,7 +39,17 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        audioSource = GetComponent<AudioSource>();
         SpawnCapsule();
+    }
+
+    // ★ SE 再生関数
+    public void PlaySE(AudioClip clip)
+    {
+        if (clip != null)
+        {
+            audioSource.PlayOneShot(clip);
+        }
     }
 
     //========================================
@@ -37,7 +59,6 @@ public class GameManager : MonoBehaviour
     public void SpawnCapsule()
     {
         GameObject obj = Instantiate(capsulePrefab);
-
         currentCapsule = obj.GetComponent<Capsule>();
     }
 
@@ -48,7 +69,6 @@ public class GameManager : MonoBehaviour
     public void SetGameMode(GameMode mode)
     {
         currentMode = mode;
-
         Debug.Log("ゲームモード変更: " + currentMode);
     }
 

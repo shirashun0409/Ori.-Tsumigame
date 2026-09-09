@@ -1,4 +1,5 @@
 using UnityEngine;
+using DG.Tweening;
 
 public class Capsule : MonoBehaviour
 {
@@ -16,23 +17,20 @@ public class Capsule : MonoBehaviour
     private float fallTimer;
 
     private bool isLanded = false;
-    // グリッド座標（leftPart の位置）
+
     private int gridX = 3;
     private int gridY = 0;
 
-    // 回転状態 0=右, 1=上, 2=左, 3=下（rightPart が leftPart から見てどの方向にあるか）
     private int rotation = 0;
 
-    // 回転状態ごとのグリッド上オフセット（Y は下方向がプラス）
     private static readonly Vector2Int[] Directions =
     {
-        new Vector2Int(1, 0),  // 右
-        new Vector2Int(0, -1), // 上
-        new Vector2Int(-1, 0), // 左
-        new Vector2Int(0, 1)   // 下
+        new Vector2Int(1, 0),
+        new Vector2Int(0, -1),
+        new Vector2Int(-1, 0),
+        new Vector2Int(0, 1)
     };
 
-    // カプセルのパーツ
     private GameObject leftPart;
     private GameObject rightPart;
 
@@ -75,7 +73,6 @@ public class Capsule : MonoBehaviour
 
         int newX = gridX + dx;
 
-        // 移動先で両パーツが盤面内かつ空いているか
         if (BoardManager.Instance.IsOccupied(newX, gridY))
             return;
 
@@ -122,7 +119,6 @@ public class Capsule : MonoBehaviour
         int subX = gridX + dir.x;
         int subY = gridY + dir.y;
 
-        // 各パーツの1マス下を判定（相方パーツのいるマスは空き扱い）
         return
             CanOccupy(gridX, gridY + 1, subX, subY) &&
             CanOccupy(subX, subY + 1, gridX, gridY);
@@ -145,16 +141,20 @@ public class Capsule : MonoBehaviour
         if (!Input.GetKeyDown(KeyCode.Space))
             return;
 
-        // 右 → 上 → 左 → 下 → 右... の順に一周（反時計回り）
         int newRotation = (rotation + 1) % 4;
         Vector2Int dir = Directions[newRotation];
 
-        // 回転先が盤面外または埋まっていたら回転しない
         if (BoardManager.Instance.IsOccupied(gridX + dir.x, gridY + dir.y))
             return;
 
         rotation = newRotation;
         UpdatePartPositions();
+
+        // ★ 回転エフェクト（ズレないスケール演出）
+        transform.DOScale(1.15f, 0.07f).SetLoops(2, LoopType.Yoyo);
+
+        // ★ 回転SE
+        GameManager.Instance.PlaySE(GameManager.Instance.rotateSE);
     }
 
     //----------------------------------------------------
@@ -174,8 +174,6 @@ public class Capsule : MonoBehaviour
             transform);
 
         obj.transform.localPosition = localPos;
-
-        // ★ 追加：パーツの大きさを固定（マスと揃える）
         obj.transform.localScale = Vector3.one;
 
         CapsulePart part = obj.GetComponent<CapsulePart>();
@@ -189,7 +187,6 @@ public class Capsule : MonoBehaviour
 
         return obj;
     }
-
 
     //----------------------------------------------------
     // 表示位置更新
@@ -213,10 +210,12 @@ public class Capsule : MonoBehaviour
         float distance = BoardManager.Instance.CellSize;
         Vector2Int dir = Directions[rotation];
 
-        // グリッドYは下がプラスなので符号反転
         return new Vector3(dir.x * distance, -dir.y * distance, 0f);
     }
 
+    //----------------------------------------------------
+    // 着地
+    //----------------------------------------------------
 
     private void Land()
     {
@@ -232,12 +231,14 @@ public class Capsule : MonoBehaviour
             leftPart,
             rightPart);
 
+        // ★ 落下SE
+        GameManager.Instance.PlaySE(GameManager.Instance.dropSE);
+
         Debug.Log("着地完了");
 
         if (GameManager.Instance.IsIdiomMode())
         {
             BoardManager.Instance.StartChain();
-
             StartCoroutine(WaitForChainAndSpawn());
         }
         else
@@ -248,39 +249,31 @@ public class Capsule : MonoBehaviour
 
     private System.Collections.IEnumerator WaitForChainAndSpawn()
     {
-        // 連鎖処理が始まるのを待つ
         yield return null;
 
-        // 連鎖が完全に終わるまで待つ
         while (BoardManager.Instance.IsChainProcessing())
         {
             yield return null;
         }
 
-        // 連鎖終了
         SpawnNextCapsule();
     }
 
-
     private System.Collections.IEnumerator WaitForGravityAndSpawn()
     {
-        // 重力落下が始まるのを待つ
         yield return null;
 
-        // 重力落下中なら、終わるまで待つ
         while (BoardManager.Instance.IsGravityFalling())
         {
             yield return null;
         }
 
-        // 落下が完全に終わった
         SpawnNextCapsule();
     }
 
     private void SpawnNextCapsule()
     {
         GameManager.Instance.SpawnCapsule();
-
         Destroy(gameObject);
     }
 }
