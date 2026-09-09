@@ -9,6 +9,7 @@ public class GameManager : MonoBehaviour
     private GameObject capsulePrefab;
 
     [Header("Game Mode")]
+
     [SerializeField]
     private GameMode currentMode = GameMode.Idiom;
 

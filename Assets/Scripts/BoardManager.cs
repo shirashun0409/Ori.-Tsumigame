@@ -55,7 +55,9 @@ public class BoardManager : MonoBehaviour
              (Height - 1) * cellSize / 2f);
 
         CreateBoard();
+
     }
+
 
 
     /// <summary>
@@ -207,45 +209,55 @@ public class BoardManager : MonoBehaviour
         {
             bool movedThisStep = false;
 
-            // 下の行から上へ調べる（必ず1マスずつ）
             for (int y = Height - 2; y >= 0; y--)
             {
                 for (int x = 0; x < Width; x++)
                 {
                     CapsulePart part = board[x, y];
-
                     if (part == null)
                         continue;
 
-                    // 真下が空いている場合のみ1マス落とす
-                    // 真下が空いている場合のみ1マス落とす
-                    if (board[x, y + 1] == null)
-                    {
-                        board[x, y + 1] = part;
-                        board[x, y] = null;
+                    // 真下が空いているか
+                    bool belowEmpty = board[x, y + 1] == null;
 
-                        part.transform.position = GridToWorld(x, y + 1);
+                    if (!belowEmpty)
+                        continue;
 
-                        // ★ ここに追加：落下エフェクト
-                        part.transform.DOScale(1.1f, 0.1f).SetLoops(2, LoopType.Yoyo);
+                    // ★ 横の支え判定（ドクターマリオ式）
+                    bool hasLeftSupport =
+                        x > 0 &&
+                        board[x - 1, y] != null &&
+                        board[x - 1, y + 1] != null;
 
-                        movedThisStep = true;
-                    }
+                    bool hasRightSupport =
+                        x < Width - 1 &&
+                        board[x + 1, y] != null &&
+                        board[x + 1, y + 1] != null;
 
+                    // 横の支えがあるなら落ちない
+                    if (hasLeftSupport || hasRightSupport)
+                        continue;
+
+                    // 落下処理
+                    board[x, y + 1] = part;
+                    board[x, y] = null;
+
+                    part.transform.position = GridToWorld(x, y + 1);
+
+                    movedThisStep = true;
                 }
             }
 
-            // 1マスも動かなかったら終了
             if (!movedThisStep)
                 break;
 
-            // 1マス落ちるたびに待つ
-            yield return new WaitForSeconds(
-                gravityFallInterval);
+            yield return new WaitForSeconds(gravityFallInterval);
         }
 
         isGravityFalling = false;
     }
+
+
 
 
     //==================================================
@@ -324,4 +336,6 @@ public class BoardManager : MonoBehaviour
     {
         return isChainProcessing;
     }
+
+
 }

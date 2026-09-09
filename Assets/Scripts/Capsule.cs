@@ -219,6 +219,10 @@ public class Capsule : MonoBehaviour
 
     private void Land()
     {
+
+        // ★ 回転エフェクトが残っていても必ず元の大きさに戻す
+        transform.localScale = Vector3.one;
+
         isLanded = true;
 
         Vector2Int dir = Directions[rotation];
