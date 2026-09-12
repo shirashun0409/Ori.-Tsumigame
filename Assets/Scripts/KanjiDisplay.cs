@@ -1,4 +1,4 @@
-uusing UnityEngine;
+using UnityEngine;
 using TMPro;
 
 public class KanjiDisplay : MonoBehaviour

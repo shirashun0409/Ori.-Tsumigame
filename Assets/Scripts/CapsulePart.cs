@@ -6,6 +6,15 @@ public class CapsulePart : MonoBehaviour
 
     private KanjiData kanjiData;
 
+    // ★ BoardManager が読むための漢字文字列プロパティ
+    public string Kanji
+    {
+        get
+        {
+            return kanjiData != null ? kanjiData.kanji : "";
+        }
+    }
+
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();

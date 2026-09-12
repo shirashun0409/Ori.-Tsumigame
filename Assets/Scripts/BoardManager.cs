@@ -22,11 +22,11 @@ public class BoardManager : MonoBehaviour
     private bool isChainProcessing = false;
 
     // ==== 出現率調整用 ====
-    private HashSet<string> idiomKanji;   // 熟語に使われる漢字セット
-    private float elapsedTime = 0f;       // 経過時間
-    private float idiomWeightStart = 3f;  // 熟語漢字の初期重み
-    private float idiomWeightEnd = 1f;    // 最終的な重み（通常）
-    private float difficultyTime = 120f;  // 何秒で難しくなるか（2分）
+    private HashSet<string> idiomKanji;
+    private float elapsedTime = 0f;
+    private float idiomWeightStart = 3f;
+    private float idiomWeightEnd = 1f;
+    private float difficultyTime = 120f;
 
     private void Awake()
     {
@@ -42,7 +42,6 @@ public class BoardManager : MonoBehaviour
 
         CreateBoard();
 
-        // ★ GameManager.Start() が終わるまで 1 フレーム待つ
         yield return null;
 
         idiomKanji = new HashSet<string>();
@@ -56,15 +55,13 @@ public class BoardManager : MonoBehaviour
         }
     }
 
-
     private void Update()
     {
-        // ★ 経過時間を更新（難易度上昇）
         elapsedTime += Time.deltaTime;
     }
 
     //==================================================
-    // ★ 重み付きランダムで漢字を選ぶ（熟語漢字優遇）
+    // ★ 重み付きランダムで漢字を選ぶ
     //==================================================
     public string GetRandomKanji()
     {
@@ -78,7 +75,6 @@ public class BoardManager : MonoBehaviour
         float totalWeight = 0f;
         List<(string kanji, float weight)> weightedList = new();
 
-        // ★ 修正済み：Entries は不要、配列をそのまま回す
         foreach (var entry in registry)
         {
             float w = idiomKanji.Contains(entry.Kanji)
@@ -254,6 +250,23 @@ public class BoardManager : MonoBehaviour
     }
 
     //==================================================
+    // ★ 熟語文字列を作る（追加）
+    //==================================================
+    private string BuildIdiomString(List<Vector2Int> positions)
+    {
+        positions.Sort((a, b) => a.y.CompareTo(b.y)); // 上から読む
+
+        string result = "";
+        foreach (var pos in positions)
+        {
+            CapsulePart part = board[pos.x, pos.y];
+            if (part != null)
+                result += part.Kanji;   // CapsulePart に Kanji がある前提
+        }
+        return result;
+    }
+
+    //==================================================
     // 連鎖処理
     //==================================================
     public void StartChain()
@@ -276,6 +289,10 @@ public class BoardManager : MonoBehaviour
 
             if (uniqueMatches.Count == 0)
                 break;
+
+            // ★ 熟語文字列を作って GameManager に渡す（追加）
+            string idiom = BuildIdiomString(matches);
+            GameManager.Instance.OnIdiomCreated(idiom);
 
             GameManager.Instance.PlaySE(GameManager.Instance.comboSE);
 

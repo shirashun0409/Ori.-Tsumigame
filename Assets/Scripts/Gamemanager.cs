@@ -5,12 +5,10 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
 
     [Header("Prefab")]
-    [SerializeField]
-    private GameObject capsulePrefab;
+    [SerializeField] private GameObject capsulePrefab;
 
     [Header("Game Mode")]
-    [SerializeField]
-    private GameMode currentMode = GameMode.Idiom;
+    [SerializeField] private GameMode currentMode = GameMode.Idiom;
 
     private Capsule currentCapsule;
 
@@ -25,6 +23,11 @@ public class GameManager : MonoBehaviour
 
     private AudioSource audioSource;
 
+    // ★ UI（熟語表示 & 意味表示）
+    [Header("UI")]
+    [SerializeField] private KanjiDisplay kanjiDisplay;
+    [SerializeField] private MeaningDisplay meaningDisplay;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -32,7 +35,6 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
             return;
         }
-
         Instance = this;
     }
 
@@ -40,11 +42,15 @@ public class GameManager : MonoBehaviour
     {
         audioSource = GetComponent<AudioSource>();
 
-        // ★ やさしい辞書は KanjiRegistry.cs に入っている
+        // ★ 辞書セット
         CurrentRegistry = KanjiRegistry.Entries;
 
-        // CurrentRegistry = KanjiRegistryNormal.Entries; // ふつう
-        // CurrentRegistry = KanjiRegistryHard.Entries;   // むずかしい
+        // ★ 初期表示（空欄）
+        if (kanjiDisplay != null)
+            kanjiDisplay.SetIdiom("");
+
+        if (meaningDisplay != null)
+            meaningDisplay.SetMeaning("");
 
         SpawnCapsule();
     }
@@ -63,6 +69,19 @@ public class GameManager : MonoBehaviour
         currentCapsule = obj.GetComponent<Capsule>();
     }
 
+    // ★ BoardManager から熟語が成立したときに呼ばれる
+    public void OnIdiomCreated(string idiom)
+    {
+        if (kanjiDisplay != null)
+            kanjiDisplay.SetIdiom(idiom);
+
+        // ★ 熟語辞書から意味を取得
+        string meaning = IdiomDictionary.GetMeaning(idiom);
+
+        if (meaningDisplay != null)
+            meaningDisplay.SetMeaning(meaning);
+    }
+
     // ★ ゲームモード
     public void SetGameMode(GameMode mode)
     {
@@ -71,7 +90,6 @@ public class GameManager : MonoBehaviour
     }
 
     public GameMode GetGameMode() => currentMode;
-
     public bool IsIdiomMode() => currentMode == GameMode.Idiom;
     public bool IsRadicalMode() => currentMode == GameMode.Radical;
     public bool IsReadingMode() => currentMode == GameMode.Reading;
