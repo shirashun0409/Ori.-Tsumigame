@@ -11,8 +11,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameMode currentMode = GameMode.Idiom;
 
     private Capsule currentCapsule;
+    private Capsule nextCapsule;
 
-    // ★ 現在使う辞書（Entry の配列）
     public KanjiRegistry.Entry[] CurrentRegistry;
 
     [Header("Sound Effects")]
@@ -23,10 +23,10 @@ public class GameManager : MonoBehaviour
 
     private AudioSource audioSource;
 
-    // ★ UI（熟語表示 & 意味表示）
     [Header("UI")]
     [SerializeField] private KanjiDisplay kanjiDisplay;
     [SerializeField] private MeaningDisplay meaningDisplay;
+    [SerializeField] private NextDisplay nextDisplay;
 
     private void Awake()
     {
@@ -42,10 +42,8 @@ public class GameManager : MonoBehaviour
     {
         audioSource = GetComponent<AudioSource>();
 
-        // ★ 辞書セット
         CurrentRegistry = KanjiRegistry.Entries;
 
-        // ★ 初期表示（空欄）
         if (kanjiDisplay != null)
             kanjiDisplay.SetIdiom("");
 
@@ -55,34 +53,70 @@ public class GameManager : MonoBehaviour
         SpawnCapsule();
     }
 
-    // ★ SE 再生
     public void PlaySE(AudioClip clip)
     {
         if (clip != null)
             audioSource.PlayOneShot(clip);
     }
 
-    // ★ カプセル生成
+    // ★ カプセル生成（NEXT 完全対応）
     public void SpawnCapsule()
     {
+        if (nextCapsule == null)
+        {
+            GameObject firstObj = Instantiate(capsulePrefab);
+            nextCapsule = firstObj.GetComponent<Capsule>();
+
+            nextCapsule.isNextPreview = true;
+
+            KanjiData left = KanjiDatabase.GetRandomKanji();
+            KanjiData right = KanjiDatabase.GetRandomKanji();
+            nextCapsule.SetKanjiForNext(left, right);
+
+            firstObj.transform.position = new Vector3(999, 999, 0);
+
+            // ★ 左右両方の漢字を表示
+            nextDisplay.SetNextSprites(
+                nextCapsule.GetLeftSprite(),
+                nextCapsule.GetRightSprite()
+            );
+        }
+
+        currentCapsule = nextCapsule;
+
+        currentCapsule.transform.position = BoardManager.Instance.GridToWorld(3, 0);
+
+        currentCapsule.isNextPreview = false;
+
         GameObject obj = Instantiate(capsulePrefab);
-        currentCapsule = obj.GetComponent<Capsule>();
+        nextCapsule = obj.GetComponent<Capsule>();
+
+        nextCapsule.isNextPreview = true;
+
+        KanjiData nextLeft = KanjiDatabase.GetRandomKanji();
+        KanjiData nextRight = KanjiDatabase.GetRandomKanji();
+        nextCapsule.SetKanjiForNext(nextLeft, nextRight);
+
+        obj.transform.position = new Vector3(999, 999, 0);
+
+        // ★ 左右両方の漢字を表示
+        nextDisplay.SetNextSprites(
+            nextCapsule.GetLeftSprite(),
+            nextCapsule.GetRightSprite()
+        );
     }
 
-    // ★ BoardManager から熟語が成立したときに呼ばれる
     public void OnIdiomCreated(string idiom)
     {
         if (kanjiDisplay != null)
             kanjiDisplay.SetIdiom(idiom);
 
-        // ★ 熟語辞書から意味を取得
         string meaning = IdiomDictionary.GetMeaning(idiom);
 
         if (meaningDisplay != null)
             meaningDisplay.SetMeaning(meaning);
     }
 
-    // ★ ゲームモード
     public void SetGameMode(GameMode mode)
     {
         currentMode = mode;
