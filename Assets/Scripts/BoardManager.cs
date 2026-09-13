@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
+using TMPro;
+
 
 public class BoardManager : MonoBehaviour
 {
@@ -13,7 +15,8 @@ public class BoardManager : MonoBehaviour
     [SerializeField] private GameObject cellPrefab;
     [SerializeField] private float cellSize = 1.0f;
     public float CellSize => cellSize;
-
+    public TextMeshProUGUI ReadingText;
+    public TextMeshProUGUI MeaningText;
     private CapsulePart[,] board;
     private Vector2 boardOrigin;
 
@@ -53,6 +56,8 @@ public class BoardManager : MonoBehaviour
                 idiomKanji.Add(partner);
             }
         }
+        ReadingText.text = "";
+
     }
 
     private void Update()
@@ -275,6 +280,9 @@ public class BoardManager : MonoBehaviour
             StartCoroutine(ChainCoroutine());
     }
 
+    //==================================================
+    // 連鎖処理
+    //==================================================
     private IEnumerator ChainCoroutine()
     {
         isChainProcessing = true;
@@ -294,6 +302,18 @@ public class BoardManager : MonoBehaviour
             string idiom = BuildIdiomString(matches);
             GameManager.Instance.OnIdiomCreated(idiom);
 
+            // ★★★ 読みを UI に表示する ★★★
+            ReadingText.text = IdiomDictionary.GetReading(idiom);
+
+            // ★★★ 意味＋構造分類をまとめて表示する（追加） ★★★
+            string meaning = IdiomDictionary.GetMeaning(idiom);
+            string structure = IdiomDictionary.Structures.ContainsKey(idiom)
+                ? IdiomDictionary.Structures[idiom]
+                : "";
+
+            // MeaningText は GameManager が更新しているので上書き
+            MeaningText.text = meaning + "\n（構造：" + structure + "）";
+
             GameManager.Instance.PlaySE(GameManager.Instance.comboSE);
 
             foreach (Vector2Int pos in uniqueMatches)
@@ -312,6 +332,8 @@ public class BoardManager : MonoBehaviour
 
         isChainProcessing = false;
     }
+
+
 
     public bool IsChainProcessing() => isChainProcessing;
 }
