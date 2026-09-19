@@ -48,6 +48,7 @@ public class BoardManager : MonoBehaviour
         yield return null;
 
         idiomKanji = new HashSet<string>();
+
         foreach (var entry in GameManager.Instance.CurrentRegistry)
         {
             foreach (var partner in entry.IdiomPartners)
@@ -56,8 +57,8 @@ public class BoardManager : MonoBehaviour
                 idiomKanji.Add(partner);
             }
         }
-        ReadingText.text = "";
 
+        ReadingText.text = "";
     }
 
     private void Update()
@@ -73,7 +74,8 @@ public class BoardManager : MonoBehaviour
         var registry = GameManager.Instance.CurrentRegistry;
 
         float t = Mathf.Clamp01(elapsedTime / difficultyTime);
-        float currentIdiomWeight = Mathf.Lerp(idiomWeightStart, idiomWeightEnd, t);
+        float currentIdiomWeight =
+            Mathf.Lerp(idiomWeightStart, idiomWeightEnd, t);
 
         float normalWeight = 1f;
 
@@ -95,6 +97,7 @@ public class BoardManager : MonoBehaviour
         foreach (var item in weightedList)
         {
             r -= item.weight;
+
             if (r <= 0f)
                 return item.kanji;
         }
@@ -132,17 +135,26 @@ public class BoardManager : MonoBehaviour
     }
 
     public bool IsEmpty(int x, int y) => board[x, y] == null;
+
     public bool IsInsideBoard(int x, int y) =>
         x >= 0 && x < Width && y >= 0 && y < Height;
 
     //==================================================
     // カプセル配置
     //==================================================
-    public void PlaceCapsule(int leftX, int leftY, int rightX, int rightY,
-                             GameObject left, GameObject right)
+    public void PlaceCapsule(
+        int leftX,
+        int leftY,
+        int rightX,
+        int rightY,
+        GameObject left,
+        GameObject right)
     {
-        CapsulePart leftPart = left.GetComponent<CapsulePart>();
-        CapsulePart rightPart = right.GetComponent<CapsulePart>();
+        CapsulePart leftPart =
+            left.GetComponent<CapsulePart>();
+
+        CapsulePart rightPart =
+            right.GetComponent<CapsulePart>();
 
         board[leftX, leftY] = leftPart;
         board[rightX, rightY] = rightPart;
@@ -150,21 +162,31 @@ public class BoardManager : MonoBehaviour
         left.transform.SetParent(transform);
         right.transform.SetParent(transform);
 
-        left.transform.position = GridToWorld(leftX, leftY);
-        right.transform.position = GridToWorld(rightX, rightY);
+        left.transform.position =
+            GridToWorld(leftX, leftY);
+
+        right.transform.position =
+            GridToWorld(rightX, rightY);
     }
 
-    public void SetPart(int x, int y, CapsulePart part)
+    public void SetPart(
+        int x,
+        int y,
+        CapsulePart part)
     {
         board[x, y] = part;
     }
 
-    public CapsulePart GetPart(int x, int y)
+    public CapsulePart GetPart(
+        int x,
+        int y)
     {
         return board[x, y];
     }
 
-    public bool IsOccupied(int x, int y)
+    public bool IsOccupied(
+        int x,
+        int y)
     {
         if (!IsInsideBoard(x, y))
             return true;
@@ -175,32 +197,44 @@ public class BoardManager : MonoBehaviour
     //==================================================
     // 消去処理
     //==================================================
-    public void RemovePart(int x, int y)
+    public void RemovePart(
+        int x,
+        int y)
     {
         if (!IsInsideBoard(x, y))
             return;
 
-        CapsulePart part = board[x, y];
+        CapsulePart part =
+            board[x, y];
+
         if (part == null)
             return;
 
         board[x, y] = null;
 
-        part.transform.DOScale(0f, 0.15f).SetEase(Ease.InBack);
-        GameManager.Instance.PlaySE(GameManager.Instance.eraseSE);
+        part.transform
+            .DOScale(0f, 0.15f)
+            .SetEase(Ease.InBack);
 
-        Destroy(part.gameObject, 0.15f);
+        GameManager.Instance.PlaySE(
+            GameManager.Instance.eraseSE);
+
+        Destroy(
+            part.gameObject,
+            0.15f);
     }
 
     //==================================================
     // 重力落下
     //==================================================
-    public bool IsGravityFalling() => isGravityFalling;
+    public bool IsGravityFalling() =>
+        isGravityFalling;
 
     public void ApplyGravity()
     {
         if (!isGravityFalling)
-            StartCoroutine(GravityFallCoroutine());
+            StartCoroutine(
+                GravityFallCoroutine());
     }
 
     private IEnumerator GravityFallCoroutine()
@@ -215,11 +249,15 @@ public class BoardManager : MonoBehaviour
             {
                 for (int x = 0; x < Width; x++)
                 {
-                    CapsulePart part = board[x, y];
+                    CapsulePart part =
+                        board[x, y];
+
                     if (part == null)
                         continue;
 
-                    bool belowEmpty = board[x, y + 1] == null;
+                    bool belowEmpty =
+                        board[x, y + 1] == null;
+
                     if (!belowEmpty)
                         continue;
 
@@ -233,13 +271,17 @@ public class BoardManager : MonoBehaviour
                         board[x + 1, y] != null &&
                         board[x + 1, y + 1] != null;
 
-                    if (hasLeftSupport || hasRightSupport)
+                    if (hasLeftSupport ||
+                        hasRightSupport)
                         continue;
 
                     board[x, y + 1] = part;
                     board[x, y] = null;
 
-                    part.transform.position = GridToWorld(x, y + 1);
+                    part.transform.position =
+                        GridToWorld(
+                            x,
+                            y + 1);
 
                     movedThisStep = true;
                 }
@@ -248,36 +290,84 @@ public class BoardManager : MonoBehaviour
             if (!movedThisStep)
                 break;
 
-            yield return new WaitForSeconds(gravityFallInterval);
+            yield return new WaitForSeconds(
+                gravityFallInterval);
         }
 
         isGravityFalling = false;
     }
 
     //==================================================
-    // ★ 熟語文字列を作る（追加）
+    // ★ 熟語文字列を作る
     //==================================================
-    private string BuildIdiomString(List<Vector2Int> positions)
+    private string BuildIdiomString(
+        List<Vector2Int> positions)
     {
-        positions.Sort((a, b) => a.y.CompareTo(b.y)); // 上から読む
+        if (positions == null ||
+            positions.Count == 0)
+        {
+            return "";
+        }
+
+        // 横並びの場合
+        // 左 → 右 の順番にする
+        if (positions.Count == 2 &&
+            positions[0].y == positions[1].y)
+        {
+            positions.Sort(
+                (a, b) =>
+                    a.x.CompareTo(b.x));
+        }
+        // 縦並びの場合
+        // 上 → 下 の順番にする
+        else if (positions.Count == 2 &&
+                 positions[0].x == positions[1].x)
+        {
+            positions.Sort(
+                (a, b) =>
+                    a.y.CompareTo(b.y));
+        }
+        else
+        {
+            // 念のため複数位置の場合も
+            // 上 → 下、同じ高さなら左 → 右
+            positions.Sort(
+                (a, b) =>
+                {
+                    int yCompare =
+                        a.y.CompareTo(b.y);
+
+                    if (yCompare != 0)
+                        return yCompare;
+
+                    return a.x.CompareTo(b.x);
+                });
+        }
 
         string result = "";
+
         foreach (var pos in positions)
         {
-            CapsulePart part = board[pos.x, pos.y];
+            CapsulePart part =
+                board[pos.x, pos.y];
+
             if (part != null)
-                result += part.Kanji;   // CapsulePart に Kanji がある前提
+            {
+                result += part.Kanji;
+            }
         }
+
         return result;
     }
 
     //==================================================
-    // 連鎖処理
+    // 連鎖処理開始
     //==================================================
     public void StartChain()
     {
         if (!isChainProcessing)
-            StartCoroutine(ChainCoroutine());
+            StartCoroutine(
+                ChainCoroutine());
     }
 
     //==================================================
@@ -293,35 +383,58 @@ public class BoardManager : MonoBehaviour
                 KanjiMatchFinder.FindIdiomMatches();
 
             HashSet<Vector2Int> uniqueMatches =
-                new HashSet<Vector2Int>(matches);
+                new HashSet<Vector2Int>(
+                    matches);
 
             if (uniqueMatches.Count == 0)
                 break;
 
-            // ★ 熟語文字列を作って GameManager に渡す（追加）
-            string idiom = BuildIdiomString(matches);
-            GameManager.Instance.OnIdiomCreated(idiom);
+            // ★ 熟語文字列を作って
+            // GameManager に渡す
+            string idiom =
+                BuildIdiomString(matches);
+
+            GameManager.Instance
+                .OnIdiomCreated(idiom);
 
             // ★★★ 読みを UI に表示する ★★★
-            ReadingText.text = IdiomDictionary.GetReading(idiom);
+            ReadingText.text =
+                IdiomDictionary
+                    .GetReading(idiom);
 
-            // ★★★ 意味＋構造分類をまとめて表示する（追加） ★★★
-            string meaning = IdiomDictionary.GetMeaning(idiom);
-            string structure = IdiomDictionary.Structures.ContainsKey(idiom)
-                ? IdiomDictionary.Structures[idiom]
-                : "";
+            // ★★★ 意味＋構造分類をまとめて表示する ★★★
+            string meaning =
+                IdiomDictionary
+                    .GetMeaning(idiom);
 
-            // MeaningText は GameManager が更新しているので上書き
-            MeaningText.text = meaning + "\n（構造：" + structure + "）";
+            string structure =
+                IdiomDictionary.Structures
+                    .ContainsKey(idiom)
+                    ? IdiomDictionary
+                        .Structures[idiom]
+                    : "";
 
-            GameManager.Instance.PlaySE(GameManager.Instance.comboSE);
+            // MeaningText は GameManager が
+            // 更新しているので上書き
+            MeaningText.text =
+                meaning +
+                "\n（構造：" +
+                structure +
+                "）";
 
-            foreach (Vector2Int pos in uniqueMatches)
+            GameManager.Instance.PlaySE(
+                GameManager.Instance.comboSE);
+
+            foreach (Vector2Int pos
+                in uniqueMatches)
             {
-                RemovePart(pos.x, pos.y);
+                RemovePart(
+                    pos.x,
+                    pos.y);
             }
 
             ApplyGravity();
+
             yield return null;
 
             while (isGravityFalling)
@@ -333,7 +446,6 @@ public class BoardManager : MonoBehaviour
         isChainProcessing = false;
     }
 
-
-
-    public bool IsChainProcessing() => isChainProcessing;
+    public bool IsChainProcessing() =>
+        isChainProcessing;
 }
