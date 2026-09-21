@@ -111,7 +111,7 @@ public static class KanjiRegistry
         new Entry(
             "空", "穴",
             new[] { "くう", "そら", "あ" },
-            new[] { "中", "地", "色" },
+            new[] { "中", "地", "色","手" },
             "そら"
         ),
 
