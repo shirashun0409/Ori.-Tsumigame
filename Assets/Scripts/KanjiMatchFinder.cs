@@ -1,18 +1,39 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public class IdiomMatch
+{
+    public Vector2Int First;
+    public Vector2Int Second;
+
+    public IdiomMatch(
+        Vector2Int first,
+        Vector2Int second)
+    {
+        First = first;
+        Second = second;
+    }
+}
+
+
 public static class KanjiMatchFinder
 {
     /// <summary>
-    /// 熟語モードで消去対象になる隣接ペアを探します。
+    /// 熟語モードで成立する
+    /// すべての隣接二字熟語を探します。
+    ///
+    /// 横方向：左 → 右
+    /// 縦方向：上 → 下
+    /// のみ確認します。
     /// </summary>
-    public static List<Vector2Int> FindIdiomMatches()
+    public static List<IdiomMatch> FindIdiomMatches()
     {
-        List<Vector2Int> matches =
-            new List<Vector2Int>();
+        List<IdiomMatch> matches =
+            new List<IdiomMatch>();
 
         BoardManager board =
             BoardManager.Instance;
+
 
         for (int y = 0;
              y < BoardManager.Height;
@@ -28,6 +49,7 @@ public static class KanjiMatchFinder
                 if (currentPart == null)
                     continue;
 
+
                 KanjiData currentKanji =
                     currentPart.GetKanjiData();
 
@@ -35,7 +57,10 @@ public static class KanjiMatchFinder
                     continue;
 
 
-                // 右隣を確認
+                //======================================
+                // 右隣
+                //======================================
+
                 if (x + 1 < BoardManager.Width)
                 {
                     CheckPair(
@@ -43,12 +68,15 @@ public static class KanjiMatchFinder
                         y,
                         x + 1,
                         y,
-                        currentKanji,
-                        matches);
+                        matches
+                    );
                 }
 
 
-                // 下隣を確認
+                //======================================
+                // 下隣
+                //======================================
+
                 if (y + 1 < BoardManager.Height)
                 {
                     CheckPair(
@@ -56,11 +84,12 @@ public static class KanjiMatchFinder
                         y,
                         x,
                         y + 1,
-                        currentKanji,
-                        matches);
+                        matches
+                    );
                 }
             }
         }
+
 
         return matches;
     }
@@ -71,31 +100,51 @@ public static class KanjiMatchFinder
         int y1,
         int x2,
         int y2,
-        KanjiData firstKanji,
-        List<Vector2Int> matches)
+        List<IdiomMatch> matches)
     {
-        CapsulePart secondPart =
-            BoardManager.Instance.GetPart(x2, y2);
+        BoardManager board =
+            BoardManager.Instance;
 
-        if (secondPart == null)
+
+        CapsulePart firstPart =
+            board.GetPart(x1, y1);
+
+        CapsulePart secondPart =
+            board.GetPart(x2, y2);
+
+
+        if (firstPart == null ||
+            secondPart == null)
+        {
             return;
+        }
+
+
+        KanjiData firstKanji =
+            firstPart.GetKanjiData();
 
         KanjiData secondKanji =
             secondPart.GetKanjiData();
 
-        if (secondKanji == null)
+
+        if (firstKanji == null ||
+            secondKanji == null)
+        {
             return;
+        }
 
 
+        // first → second の順番のみ判定
         if (KanjiMatcher.IsIdiomMatch(
             firstKanji,
             secondKanji))
         {
             matches.Add(
-                new Vector2Int(x1, y1));
-
-            matches.Add(
-                new Vector2Int(x2, y2));
+                new IdiomMatch(
+                    new Vector2Int(x1, y1),
+                    new Vector2Int(x2, y2)
+                )
+            );
         }
     }
 }

@@ -3,8 +3,8 @@ using UnityEngine;
 public static class KanjiMatcher
 {
     /// <summary>
-    /// first → second の順番で正しい二字熟語になるか判定します。
-    /// 順番は入れ替えません。
+    /// first → second の順番で
+    /// ゲーム内で成立する二字熟語か判定します。
     /// </summary>
     public static bool IsIdiomMatch(
         KanjiData first,
@@ -21,14 +21,26 @@ public static class KanjiMatcher
             return false;
         }
 
-        // first → second の順番だけを確認
-        if (ContainsPartner(first, second.kanji))
+        // first → second の順番だけ確認
+        if (!ContainsPartner(
+            first,
+            second.kanji))
         {
-            return true;
+            return false;
         }
 
-        return false;
+        // 最終的に辞書に登録されているか確認
+        string idiom =
+            first.kanji + second.kanji;
+
+        if (!IdiomDictionary.Contains(idiom))
+        {
+            return false;
+        }
+
+        return true;
     }
+
 
     private static bool ContainsPartner(
         KanjiData data,
@@ -39,7 +51,8 @@ public static class KanjiMatcher
             return false;
         }
 
-        foreach (string partner in data.idiomPartners)
+        foreach (string partner
+                 in data.idiomPartners)
         {
             if (partner == targetKanji)
             {

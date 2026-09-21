@@ -4,7 +4,6 @@ using UnityEngine;
 using DG.Tweening;
 using TMPro;
 
-
 public class BoardManager : MonoBehaviour
 {
     public static BoardManager Instance { get; private set; }
@@ -14,39 +13,50 @@ public class BoardManager : MonoBehaviour
 
     [SerializeField] private GameObject cellPrefab;
     [SerializeField] private float cellSize = 1.0f;
+
     public float CellSize => cellSize;
+
     public TextMeshProUGUI ReadingText;
     public TextMeshProUGUI MeaningText;
+
     private CapsulePart[,] board;
     private Vector2 boardOrigin;
 
     [SerializeField] private float gravityFallInterval = 0.5f;
+
     private bool isGravityFalling = false;
     private bool isChainProcessing = false;
 
     // ==== 出現率調整用 ====
     private HashSet<string> idiomKanji;
+
     private float elapsedTime = 0f;
+
     private float idiomWeightStart = 3f;
     private float idiomWeightEnd = 1f;
     private float difficultyTime = 120f;
 
+
     private void Awake()
     {
         Instance = this;
+
         board = new CapsulePart[Width, Height];
     }
+
 
     private IEnumerator Start()
     {
         boardOrigin = new Vector2(
             -(Width - 1) * cellSize / 2f,
-             (Height - 1) * cellSize / 2f);
+             (Height - 1) * cellSize / 2f
+        );
 
         CreateBoard();
 
         yield return null;
 
+        // 熟語に使われる漢字を登録
         idiomKanji = new HashSet<string>();
 
         foreach (var entry in GameManager.Instance.CurrentRegistry)
@@ -58,37 +68,55 @@ public class BoardManager : MonoBehaviour
             }
         }
 
-        ReadingText.text = "";
+        if (ReadingText != null)
+            ReadingText.text = "";
+
+        if (MeaningText != null)
+            MeaningText.text = "";
     }
+
 
     private void Update()
     {
         elapsedTime += Time.deltaTime;
     }
 
+
     //==================================================
-    // ★ 重み付きランダムで漢字を選ぶ
+    // 重み付きランダムで漢字を選ぶ
     //==================================================
     public string GetRandomKanji()
     {
         var registry = GameManager.Instance.CurrentRegistry;
 
-        float t = Mathf.Clamp01(elapsedTime / difficultyTime);
+        float t =
+            Mathf.Clamp01(elapsedTime / difficultyTime);
+
         float currentIdiomWeight =
-            Mathf.Lerp(idiomWeightStart, idiomWeightEnd, t);
+            Mathf.Lerp(
+                idiomWeightStart,
+                idiomWeightEnd,
+                t
+            );
 
         float normalWeight = 1f;
 
         float totalWeight = 0f;
-        List<(string kanji, float weight)> weightedList = new();
+
+        List<(string kanji, float weight)> weightedList =
+            new List<(string kanji, float weight)>();
 
         foreach (var entry in registry)
         {
-            float w = idiomKanji.Contains(entry.Kanji)
-                ? currentIdiomWeight
-                : normalWeight;
+            float w =
+                idiomKanji.Contains(entry.Kanji)
+                    ? currentIdiomWeight
+                    : normalWeight;
 
-            weightedList.Add((entry.Kanji, w));
+            weightedList.Add(
+                (entry.Kanji, w)
+            );
+
             totalWeight += w;
         }
 
@@ -105,6 +133,7 @@ public class BoardManager : MonoBehaviour
         return weightedList[weightedList.Count - 1].kanji;
     }
 
+
     //==================================================
     // 盤面生成
     //==================================================
@@ -118,10 +147,12 @@ public class BoardManager : MonoBehaviour
                     cellPrefab,
                     GridToWorld(x, y),
                     Quaternion.identity,
-                    transform);
+                    transform
+                );
             }
         }
     }
+
 
     //==================================================
     // 座標変換
@@ -131,13 +162,26 @@ public class BoardManager : MonoBehaviour
         return new Vector3(
             boardOrigin.x + x * cellSize,
             boardOrigin.y - y * cellSize,
-            0f);
+            0f
+        );
     }
 
-    public bool IsEmpty(int x, int y) => board[x, y] == null;
 
-    public bool IsInsideBoard(int x, int y) =>
-        x >= 0 && x < Width && y >= 0 && y < Height;
+    public bool IsEmpty(int x, int y)
+    {
+        return board[x, y] == null;
+    }
+
+
+    public bool IsInsideBoard(int x, int y)
+    {
+        return
+            x >= 0 &&
+            x < Width &&
+            y >= 0 &&
+            y < Height;
+    }
+
 
     //==================================================
     // カプセル配置
@@ -169,6 +213,7 @@ public class BoardManager : MonoBehaviour
             GridToWorld(rightX, rightY);
     }
 
+
     public void SetPart(
         int x,
         int y,
@@ -177,12 +222,14 @@ public class BoardManager : MonoBehaviour
         board[x, y] = part;
     }
 
+
     public CapsulePart GetPart(
         int x,
         int y)
     {
         return board[x, y];
     }
+
 
     public bool IsOccupied(
         int x,
@@ -193,6 +240,7 @@ public class BoardManager : MonoBehaviour
 
         return board[x, y] != null;
     }
+
 
     //==================================================
     // 消去処理
@@ -217,25 +265,35 @@ public class BoardManager : MonoBehaviour
             .SetEase(Ease.InBack);
 
         GameManager.Instance.PlaySE(
-            GameManager.Instance.eraseSE);
+            GameManager.Instance.eraseSE
+        );
 
         Destroy(
             part.gameObject,
-            0.15f);
+            0.15f
+        );
     }
+
 
     //==================================================
     // 重力落下
     //==================================================
-    public bool IsGravityFalling() =>
-        isGravityFalling;
+    public bool IsGravityFalling()
+    {
+        return isGravityFalling;
+    }
+
 
     public void ApplyGravity()
     {
         if (!isGravityFalling)
+        {
             StartCoroutine(
-                GravityFallCoroutine());
+                GravityFallCoroutine()
+            );
+        }
     }
+
 
     private IEnumerator GravityFallCoroutine()
     {
@@ -273,7 +331,9 @@ public class BoardManager : MonoBehaviour
 
                     if (hasLeftSupport ||
                         hasRightSupport)
+                    {
                         continue;
+                    }
 
                     board[x, y + 1] = part;
                     board[x, y] = null;
@@ -281,7 +341,8 @@ public class BoardManager : MonoBehaviour
                     part.transform.position =
                         GridToWorld(
                             x,
-                            y + 1);
+                            y + 1
+                        );
 
                     movedThisStep = true;
                 }
@@ -291,74 +352,66 @@ public class BoardManager : MonoBehaviour
                 break;
 
             yield return new WaitForSeconds(
-                gravityFallInterval);
+                gravityFallInterval
+            );
         }
 
         isGravityFalling = false;
     }
 
+
     //==================================================
-    // ★ 熟語文字列を作る
+    // 熟語1つ分の文字列を作る
     //==================================================
     private string BuildIdiomString(
-        List<Vector2Int> positions)
+        Vector2Int first,
+        Vector2Int second)
     {
-        if (positions == null ||
-            positions.Count == 0)
+        CapsulePart firstPart =
+            board[first.x, first.y];
+
+        CapsulePart secondPart =
+            board[second.x, second.y];
+
+        if (firstPart == null ||
+            secondPart == null)
         {
             return "";
         }
 
-        // 横並びの場合
-        // 左 → 右 の順番にする
-        if (positions.Count == 2 &&
-            positions[0].y == positions[1].y)
+        // 横なら左 → 右
+        if (first.y == second.y)
         {
-            positions.Sort(
-                (a, b) =>
-                    a.x.CompareTo(b.x));
-        }
-        // 縦並びの場合
-        // 上 → 下 の順番にする
-        else if (positions.Count == 2 &&
-                 positions[0].x == positions[1].x)
-        {
-            positions.Sort(
-                (a, b) =>
-                    a.y.CompareTo(b.y));
-        }
-        else
-        {
-            // 念のため複数位置の場合も
-            // 上 → 下、同じ高さなら左 → 右
-            positions.Sort(
-                (a, b) =>
-                {
-                    int yCompare =
-                        a.y.CompareTo(b.y);
-
-                    if (yCompare != 0)
-                        return yCompare;
-
-                    return a.x.CompareTo(b.x);
-                });
-        }
-
-        string result = "";
-
-        foreach (var pos in positions)
-        {
-            CapsulePart part =
-                board[pos.x, pos.y];
-
-            if (part != null)
+            if (first.x > second.x)
             {
-                result += part.Kanji;
+                Vector2Int temp = first;
+                first = second;
+                second = temp;
+            }
+        }
+        // 縦なら上 → 下
+        else if (first.x == second.x)
+        {
+            if (first.y > second.y)
+            {
+                Vector2Int temp = first;
+                first = second;
+                second = temp;
             }
         }
 
-        return result;
+        firstPart = board[first.x, first.y];
+        secondPart = board[second.x, second.y];
+
+        if (firstPart == null ||
+            secondPart == null)
+        {
+            return "";
+        }
+
+        return firstPart.Kanji + secondPart.Kanji;
     }
+
 
     //==================================================
     // 連鎖処理開始
@@ -366,9 +419,13 @@ public class BoardManager : MonoBehaviour
     public void StartChain()
     {
         if (!isChainProcessing)
+        {
             StartCoroutine(
-                ChainCoroutine());
+                ChainCoroutine()
+            );
+        }
     }
+
 
     //==================================================
     // 連鎖処理
@@ -379,73 +436,241 @@ public class BoardManager : MonoBehaviour
 
         while (true)
         {
-            List<Vector2Int> matches =
+            List<IdiomMatch> matches =
                 KanjiMatchFinder.FindIdiomMatches();
 
-            HashSet<Vector2Int> uniqueMatches =
-                new HashSet<Vector2Int>(
-                    matches);
-
-            if (uniqueMatches.Count == 0)
+            if (matches.Count == 0)
                 break;
 
-            // ★ 熟語文字列を作って
-            // GameManager に渡す
-            string idiom =
-                BuildIdiomString(matches);
 
-            GameManager.Instance
-                .OnIdiomCreated(idiom);
+            //==================================================
+            // 成立した熟語
+            //==================================================
 
-            // ★★★ 読みを UI に表示する ★★★
-            ReadingText.text =
-                IdiomDictionary
-                    .GetReading(idiom);
+            List<string> idioms =
+                new List<string>();
 
-            // ★★★ 意味＋構造分類をまとめて表示する ★★★
-            string meaning =
-                IdiomDictionary
-                    .GetMeaning(idiom);
 
-            string structure =
-                IdiomDictionary.Structures
-                    .ContainsKey(idiom)
-                    ? IdiomDictionary
-                        .Structures[idiom]
-                    : "";
+            //==================================================
+            // 実際に消すマス
+            //==================================================
 
-            // MeaningText は GameManager が
-            // 更新しているので上書き
-            MeaningText.text =
-                meaning +
-                "\n（構造：" +
-                structure +
-                "）";
+            HashSet<Vector2Int> uniquePositions =
+                new HashSet<Vector2Int>();
+
+
+            //==================================================
+            // 熟語を調べる
+            //==================================================
+
+            foreach (IdiomMatch match in matches)
+            {
+                string idiom =
+                    BuildIdiomString(
+                        match.First,
+                        match.Second
+                    );
+
+                if (string.IsNullOrEmpty(idiom))
+                    continue;
+
+
+                // 辞書に存在する熟語だけ有効
+                if (!IdiomDictionary.Contains(idiom))
+                    continue;
+
+
+                // 同じ熟語を重複して数えない
+                if (!idioms.Contains(idiom))
+                {
+                    idioms.Add(idiom);
+                }
+
+
+                // 実際に消す漢字の位置を記録
+                uniquePositions.Add(match.First);
+                uniquePositions.Add(match.Second);
+            }
+
+
+            //==================================================
+            // 有効な熟語がなければ終了
+            //==================================================
+
+            if (idioms.Count == 0)
+                break;
+
+
+            //==================================================
+            // ★ スコア計算
+            //
+            // idioms.Count
+            //     → 今回成立した熟語数
+            //
+            // uniquePositions.Count
+            //     → 今回消える漢字数
+            //==================================================
+
+            if (ScoreManager.Instance != null)
+            {
+                ScoreManager.Instance.AddScore(
+                    uniquePositions.Count,
+                    idioms.Count
+                );
+            }
+
+
+            //==================================================
+            // 熟語表示
+            //==================================================
+
+            GameManager.Instance.OnIdiomsCreated(
+                idioms
+            );
+
+
+            //==================================================
+            // 読み・意味・構造
+            //==================================================
+
+            List<string> readings =
+                new List<string>();
+
+            List<string> meanings =
+                new List<string>();
+
+            List<string> structures =
+                new List<string>();
+
+
+            foreach (string idiom in idioms)
+            {
+                string reading =
+                    IdiomDictionary.GetReading(
+                        idiom
+                    );
+
+                string meaning =
+                    IdiomDictionary.GetMeaning(
+                        idiom
+                    );
+
+                string structure =
+                    IdiomDictionary.GetStructure(
+                        idiom
+                    );
+
+
+                // 読み
+                if (!string.IsNullOrEmpty(reading))
+                {
+                    readings.Add(reading);
+                }
+
+
+                // 意味
+                if (!string.IsNullOrEmpty(meaning))
+                {
+                    if (!string.IsNullOrEmpty(structure))
+                    {
+                        meanings.Add(
+                            idiom +
+                            "：" +
+                            meaning +
+                            "（構造：" +
+                            structure +
+                            "）"
+                        );
+                    }
+                    else
+                    {
+                        meanings.Add(
+                            idiom +
+                            "：" +
+                            meaning
+                        );
+                    }
+                }
+            }
+
+
+            //==================================================
+            // 読み表示
+            //==================================================
+
+            if (ReadingText != null)
+            {
+                ReadingText.text =
+                    string.Join(
+                        "\n",
+                        readings
+                    );
+            }
+
+
+            //==================================================
+            // 意味表示
+            //==================================================
+
+            if (MeaningText != null)
+            {
+                MeaningText.text =
+                    string.Join(
+                        "\n",
+                        meanings
+                    );
+            }
+
+
+            //==================================================
+            // コンボSE
+            //==================================================
 
             GameManager.Instance.PlaySE(
-                GameManager.Instance.comboSE);
+                GameManager.Instance.comboSE
+            );
 
-            foreach (Vector2Int pos
-                in uniqueMatches)
+
+            //==================================================
+            // 漢字を消す
+            //==================================================
+
+            foreach (Vector2Int pos in uniquePositions)
             {
                 RemovePart(
                     pos.x,
-                    pos.y);
+                    pos.y
+                );
             }
+
+
+            //==================================================
+            // 重力
+            //==================================================
 
             ApplyGravity();
 
             yield return null;
 
-            while (isGravityFalling)
-                yield return null;
 
+            // 重力が終わるまで待つ
+            while (isGravityFalling)
+            {
+                yield return null;
+            }
+
+
+            // 1フレーム待つ
             yield return null;
         }
+
 
         isChainProcessing = false;
     }
 
-    public bool IsChainProcessing() =>
-        isChainProcessing;
+
+    public bool IsChainProcessing()
+    {
+        return isChainProcessing;
+    }
 }

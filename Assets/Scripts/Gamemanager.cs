@@ -1,19 +1,27 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
+
     [Header("Prefab")]
     [SerializeField] private GameObject capsulePrefab;
 
+
     [Header("Game Mode")]
-    [SerializeField] private GameMode currentMode = GameMode.Idiom;
+    [SerializeField]
+    private GameMode currentMode =
+        GameMode.Idiom;
+
 
     private Capsule currentCapsule;
     private Capsule nextCapsule;
 
+
     public KanjiRegistry.Entry[] CurrentRegistry;
+
 
     [Header("Sound Effects")]
     public AudioClip dropSE;
@@ -21,110 +29,299 @@ public class GameManager : MonoBehaviour
     public AudioClip comboSE;
     public AudioClip rotateSE;
 
+
     private AudioSource audioSource;
+
 
     [Header("UI")]
     [SerializeField] private KanjiDisplay kanjiDisplay;
     [SerializeField] private MeaningDisplay meaningDisplay;
     [SerializeField] private NextDisplay nextDisplay;
 
+
     private void Awake()
     {
-        if (Instance != null && Instance != this)
+        if (Instance != null &&
+            Instance != this)
         {
             Destroy(gameObject);
             return;
         }
+
         Instance = this;
     }
 
+
     private void Start()
     {
-        audioSource = GetComponent<AudioSource>();
+        audioSource =
+            GetComponent<AudioSource>();
 
-        CurrentRegistry = KanjiRegistry.Entries;
+
+        CurrentRegistry =
+            KanjiRegistry.Entries;
+
 
         if (kanjiDisplay != null)
+        {
             kanjiDisplay.SetIdiom("");
+        }
+
 
         if (meaningDisplay != null)
+        {
             meaningDisplay.SetMeaning("");
+        }
+
 
         SpawnCapsule();
     }
 
+
+    //==================================================
+    // SE
+    //==================================================
+
     public void PlaySE(AudioClip clip)
     {
         if (clip != null)
+        {
             audioSource.PlayOneShot(clip);
+        }
     }
 
-    // ★ カプセル生成（NEXT 完全対応）
+
+    //==================================================
+    // カプセル生成
+    //==================================================
+
     public void SpawnCapsule()
     {
         if (nextCapsule == null)
         {
-            GameObject firstObj = Instantiate(capsulePrefab);
-            nextCapsule = firstObj.GetComponent<Capsule>();
+            GameObject firstObj =
+                Instantiate(capsulePrefab);
 
-            nextCapsule.isNextPreview = true;
 
-            KanjiData left = KanjiDatabase.GetRandomKanji();
-            KanjiData right = KanjiDatabase.GetRandomKanji();
-            nextCapsule.SetKanjiForNext(left, right);
+            nextCapsule =
+                firstObj.GetComponent<Capsule>();
 
-            firstObj.transform.position = new Vector3(999, 999, 0);
 
-            // ★ 左右両方の漢字を表示
+            nextCapsule.isNextPreview =
+                true;
+
+
+            KanjiData left =
+                KanjiDatabase.GetRandomKanji();
+
+            KanjiData right =
+                KanjiDatabase.GetRandomKanji();
+
+
+            nextCapsule.SetKanjiForNext(
+                left,
+                right
+            );
+
+
+            firstObj.transform.position =
+                new Vector3(
+                    999,
+                    999,
+                    0
+                );
+
+
             nextDisplay.SetNextSprites(
                 nextCapsule.GetLeftSprite(),
                 nextCapsule.GetRightSprite()
             );
         }
 
-        currentCapsule = nextCapsule;
 
-        currentCapsule.transform.position = BoardManager.Instance.GridToWorld(3, 0);
+        currentCapsule =
+            nextCapsule;
 
-        currentCapsule.isNextPreview = false;
 
-        GameObject obj = Instantiate(capsulePrefab);
-        nextCapsule = obj.GetComponent<Capsule>();
+        currentCapsule.transform.position =
+            BoardManager.Instance.GridToWorld(
+                3,
+                0
+            );
 
-        nextCapsule.isNextPreview = true;
 
-        KanjiData nextLeft = KanjiDatabase.GetRandomKanji();
-        KanjiData nextRight = KanjiDatabase.GetRandomKanji();
-        nextCapsule.SetKanjiForNext(nextLeft, nextRight);
+        currentCapsule.isNextPreview =
+            false;
 
-        obj.transform.position = new Vector3(999, 999, 0);
 
-        // ★ 左右両方の漢字を表示
+        GameObject obj =
+            Instantiate(capsulePrefab);
+
+
+        nextCapsule =
+            obj.GetComponent<Capsule>();
+
+
+        nextCapsule.isNextPreview =
+            true;
+
+
+        KanjiData nextLeft =
+            KanjiDatabase.GetRandomKanji();
+
+        KanjiData nextRight =
+            KanjiDatabase.GetRandomKanji();
+
+
+        nextCapsule.SetKanjiForNext(
+            nextLeft,
+            nextRight
+        );
+
+
+        obj.transform.position =
+            new Vector3(
+                999,
+                999,
+                0
+            );
+
+
         nextDisplay.SetNextSprites(
             nextCapsule.GetLeftSprite(),
             nextCapsule.GetRightSprite()
         );
     }
 
+
+    //==================================================
+    // 熟語1個表示
+    //==================================================
+
     public void OnIdiomCreated(string idiom)
     {
-        if (kanjiDisplay != null)
-            kanjiDisplay.SetIdiom(idiom);
+        List<string> idioms =
+            new List<string>();
 
-        string meaning = IdiomDictionary.GetMeaning(idiom);
+        if (!string.IsNullOrEmpty(idiom))
+        {
+            idioms.Add(idiom);
+        }
+
+        OnIdiomsCreated(idioms);
+    }
+
+
+    //==================================================
+    // 複数の熟語を表示
+    //==================================================
+
+    public void OnIdiomsCreated(
+        List<string> idioms)
+    {
+        if (idioms == null ||
+            idioms.Count == 0)
+        {
+            return;
+        }
+
+
+        //==============================================
+        // 熟語表示
+        //==============================================
+
+        if (kanjiDisplay != null)
+        {
+            string displayText =
+                string.Join(
+                    " / ",
+                    idioms
+                );
+
+            kanjiDisplay.SetIdiom(
+                displayText
+            );
+        }
+
+
+        //==============================================
+        // 意味表示
+        //==============================================
 
         if (meaningDisplay != null)
-            meaningDisplay.SetMeaning(meaning);
+        {
+            List<string> meanings =
+                new List<string>();
+
+
+            foreach (string idiom in idioms)
+            {
+                string meaning =
+                    IdiomDictionary.GetMeaning(
+                        idiom
+                    );
+
+
+                if (!string.IsNullOrEmpty(meaning))
+                {
+                    meanings.Add(
+                        idiom +
+                        "：" +
+                        meaning
+                    );
+                }
+            }
+
+
+            meaningDisplay.SetMeaning(
+                string.Join(
+                    "\n",
+                    meanings
+                )
+            );
+        }
     }
 
-    public void SetGameMode(GameMode mode)
+
+    //==================================================
+    // ゲームモード
+    //==================================================
+
+    public void SetGameMode(
+        GameMode mode)
     {
         currentMode = mode;
-        Debug.Log("ゲームモード変更: " + currentMode);
+
+        Debug.Log(
+            "ゲームモード変更: " +
+            currentMode
+        );
     }
 
-    public GameMode GetGameMode() => currentMode;
-    public bool IsIdiomMode() => currentMode == GameMode.Idiom;
-    public bool IsRadicalMode() => currentMode == GameMode.Radical;
-    public bool IsReadingMode() => currentMode == GameMode.Reading;
+
+    public GameMode GetGameMode()
+    {
+        return currentMode;
+    }
+
+
+    public bool IsIdiomMode()
+    {
+        return currentMode ==
+               GameMode.Idiom;
+    }
+
+
+    public bool IsRadicalMode()
+    {
+        return currentMode ==
+               GameMode.Radical;
+    }
+
+
+    public bool IsReadingMode()
+    {
+        return currentMode ==
+               GameMode.Reading;
+    }
 }
