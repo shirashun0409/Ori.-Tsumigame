@@ -20,7 +20,7 @@ public class ScoreManager : MonoBehaviour
     [SerializeField] private int simultaneousBonus = 200;
 
     [Header("Combo Settings")]
-    [SerializeField] private float comboLimit = 1.5f;
+    [SerializeField] private float comboLimit = 2.5f;
 
     private int score = 0;
     private int combo = 0;
@@ -387,34 +387,74 @@ public class ScoreManager : MonoBehaviour
             popup.GetComponent<TMP_Text>();
 
         if (popupText == null)
+        {
+            Destroy(popup);
             return;
+        }
 
         popupText.text =
             "+" + addScore.ToString("N0");
 
+        // ScoreTextの少し下を開始位置にする
+        popup.transform.position =
+            scoreText.transform.position
+            + new Vector3(0f, -40f, 0f);
+
         popup.transform.localScale =
-            Vector3.zero;
+     Vector3.zero;
+
+        float popupScale = 1.0f;
+
+        if (combo == 2)
+        {
+            popupScale = 1.15f;
+        }
+        else if (combo == 3)
+        {
+            popupScale = 1.3f;
+        }
+        else if (combo == 4)
+        {
+            popupScale = 1.5f;
+        }
+        else if (combo == 5)
+        {
+            popupScale = 1.7f;
+        }
+        else if (combo >= 6)
+        {
+            popupScale = 1.9f;
+        }
 
         popup.transform
-            .DOScale(
-                1.0f,
-                0.15f
+     .DOScale(
+         popupScale,
+         0.2f
+     )
+     .SetEase(Ease.OutBack);
+
+        popup.transform
+            .DOPunchScale(
+                Vector3.one * 0.15f,
+                0.25f,
+                1,
+                0.5f
             )
-            .SetEase(Ease.OutBack);
+            .SetDelay(0.2f);
 
         popup.transform
             .DOMoveY(
                 popup.transform.position.y + 50f,
-                0.8f
+                1.2f
             )
             .SetEase(Ease.OutQuad);
 
         popupText
             .DOFade(
                 0f,
-                0.5f
+                0.8f
             )
-            .SetDelay(0.3f)
+            .SetDelay(0.6f)
             .OnComplete(() =>
             {
                 Destroy(popup);
