@@ -37,7 +37,7 @@ public static class KanjiRegistry
         new Entry(
             "学", "子",
             new[] { "がく", "まな" },
-            new[] { "年", "力", "会", "食", "部", "長" },
+            new[] { "年", "力", "会", "食", "部", "長", "内" },
             "まなぶ"
         ),
 
@@ -65,7 +65,7 @@ public static class KanjiRegistry
         new Entry(
             "中", "丨",
             new[] { "ちゅう", "なか" },
-            new[] { "学", "空", "水", "年", "心", "道", "部", "手" },
+            new[] { "学", "空", "水", "年", "心", "道", "部", "手", "国" },
             "なか"
         ),
 
@@ -216,7 +216,7 @@ public static class KanjiRegistry
         new Entry(
             "食", "食",
             new[] { "しょく", "た", "く" },
-            new[] { "物", "用", "道" },
+            new[] { "物", "用", "道", "品" },
             "たべる"
         ),
 
@@ -279,7 +279,7 @@ public static class KanjiRegistry
         new Entry(
             "国", "囗",
             new[] { "こく", "くに" },
-            new[] { "会", "外", "内", "力", "道", "名" },
+            new[] { "会", "外", "内", "力", "道", "名", },
             "くに"
         ),
 
@@ -307,7 +307,7 @@ public static class KanjiRegistry
         new Entry(
             "内", "入",
             new[] { "ない", "うち" },
-            new[] { "外", "面", "心" },
+            new[] { "外", "面", "心", "戦" },
             "うち"
         ),
 
@@ -370,7 +370,7 @@ public static class KanjiRegistry
         new Entry(
             "部", "阝",
             new[] { "ぶ" },
-            new[] { "長", "下", "品", "内", "外" },
+            new[] { "長", "下", "品", "内", "外" ,"員" },
             "ぶぶん"
         ),
 

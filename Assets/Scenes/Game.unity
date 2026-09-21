@@ -238,7 +238,7 @@ Transform:
   m_GameObject: {fileID: 443642976}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -9.157715, y: -34.7406, z: 0}
+  m_LocalPosition: {x: -9.157715, y: -34.7406, z: -1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -407,7 +407,7 @@ Transform:
   m_GameObject: {fileID: 546519330}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 1}
   m_LocalScale: {x: 1.62, y: 1.62, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -598,7 +598,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ScoreManager
   scoreText: {fileID: 517209236}
   comboText: {fileID: 1164537481}
-  scorePopupPrefab: {fileID: 5391998876938413768, guid: d8a48937daaf8df4d94f9f394951325d, type: 3}
+  scorePopupPrefab: {fileID: 2074712771338225528, guid: 7e5feba0d01f8db488f8354e73906c00, type: 3}
   scorePopupParent: {fileID: 567822998}
   kanjiScore: 50
   jukugoBonus: 300
@@ -1228,8 +1228,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4278190335
-  m_fontColor: {r: 1, g: 0, b: 0, a: 1}
+    rgba: 4291428331
+  m_fontColor: {r: 0.9200824, g: 1, b: 0.78930813, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -2077,8 +2077,8 @@ Transform:
   m_GameObject: {fileID: 1770062165}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 9.25, y: -2.15, z: 0}
-  m_LocalScale: {x: 1.5, y: 1.3, z: 1}
+  m_LocalPosition: {x: 9.27, y: -2.22, z: 0}
+  m_LocalScale: {x: 1.1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -2219,12 +2219,12 @@ PrefabInstance:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 546519331}
   - {fileID: 734122199}
+  - {fileID: 546519331}
   - {fileID: 443642978}
   - {fileID: 1501128336}
   - {fileID: 1338186541}
   - {fileID: 977962478}
-  - {fileID: 8096937369719469571}
   - {fileID: 1770062167}
   - {fileID: 1162135163}
+  - {fileID: 8096937369719469571}
