@@ -502,13 +502,7 @@ public class BoardManager : MonoBehaviour
 
 
             //==================================================
-            // ★ スコア計算
-            //
-            // idioms.Count
-            //     → 今回成立した熟語数
-            //
-            // uniquePositions.Count
-            //     → 今回消える漢字数
+            // スコア計算
             //==================================================
 
             if (ScoreManager.Instance != null)
@@ -531,15 +525,14 @@ public class BoardManager : MonoBehaviour
 
             //==================================================
             // 読み・意味・構造
+            //
+            // 熟語と同じ順番で作る
             //==================================================
 
             List<string> readings =
                 new List<string>();
 
             List<string> meanings =
-                new List<string>();
-
-            List<string> structures =
                 new List<string>();
 
 
@@ -561,35 +554,50 @@ public class BoardManager : MonoBehaviour
                     );
 
 
+                //==============================================
                 // 読み
-                if (!string.IsNullOrEmpty(reading))
+                //
+                // 熟語1つにつき必ず1行
+                //==============================================
+
+                if (string.IsNullOrEmpty(reading))
+                {
+                    readings.Add("？？？");
+                }
+                else
                 {
                     readings.Add(reading);
                 }
 
 
-                // 意味
-                if (!string.IsNullOrEmpty(meaning))
+                //==============================================
+                // 意味 + 構造
+                //
+                // 熟語1つにつき必ず1行
+                //==============================================
+
+                if (string.IsNullOrEmpty(meaning))
                 {
-                    if (!string.IsNullOrEmpty(structure))
-                    {
-                        meanings.Add(
-                            idiom +
-                            "：" +
-                            meaning +
-                            "（構造：" +
-                            structure +
-                            "）"
-                        );
-                    }
-                    else
-                    {
-                        meanings.Add(
-                            idiom +
-                            "：" +
-                            meaning
-                        );
-                    }
+                    meanings.Add(
+                        idiom + "：？？？"
+                    );
+                }
+                else if (string.IsNullOrEmpty(structure))
+                {
+                    meanings.Add(
+                        idiom + "：" + meaning
+                    );
+                }
+                else
+                {
+                    meanings.Add(
+                        idiom +
+                        "：" +
+                        meaning +
+                        "（構造：" +
+                        structure +
+                        "）"
+                    );
                 }
             }
 
@@ -600,11 +608,10 @@ public class BoardManager : MonoBehaviour
 
             if (ReadingText != null)
             {
-                ReadingText.text =
-                    string.Join(
-                        "\n",
-                        readings
-                    );
+                ReadingText.text = string.Join(
+      "　",
+      readings
+  );
             }
 
 
