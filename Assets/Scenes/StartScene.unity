@@ -1087,6 +1087,7 @@ GameObject:
   m_Component:
   - component: {fileID: 759176743}
   - component: {fileID: 759176742}
+  - component: {fileID: 759176744}
   m_Layer: 0
   m_Name: 'StartSceneManager '
   m_TagString: Untagged
@@ -1108,6 +1109,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::StartSceneManager
   modeSelectGroup: {fileID: 2143197564}
   explanationGroup: {fileID: 510278835}
+  modeSelectController: {fileID: 759176744}
   slides:
   - {fileID: 238247322}
   - {fileID: 2045403545}
@@ -1133,6 +1135,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &759176744
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 759176741}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cfbe5694438b94ebf0349c129b8105, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ModeSelectController
+  jukugoButton: {fileID: 336525176}
+  busyuButton: {fileID: 185888540}
+  yomiButton: {fileID: 409881594}
 --- !u!1 &861980832
 GameObject:
   m_ObjectHideFlags: 0
@@ -1330,7 +1347,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 10
   m_TargetDisplay: 0
 --- !u!224 &1126319965
 RectTransform:
@@ -1603,8 +1620,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -2.8906, y: -218}
-  m_SizeDelta: {x: 576.5867, y: 255.5242}
+  m_AnchoredPosition: {x: -2.89, y: -250.52252}
+  m_SizeDelta: {x: 622.8518, y: 248.6777}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1543119182
 MonoBehaviour:
@@ -1682,7 +1699,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 287335560a9479149bd5b0eac43f9ad6, type: 3}
+  m_Sprite: {fileID: 536206417634500392, guid: 7890d327cce27a249ba6d76825a99435, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2652,6 +2669,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2143197565}
+  - component: {fileID: 2143197566}
   m_Layer: 5
   m_Name: ModeSelectGroup
   m_TagString: Untagged
@@ -2679,8 +2697,23 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 100, y: 100}
+  m_SizeDelta: {x: 1920, y: 1080}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &2143197566
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2143197564}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cfbe5694438b94ebf0349c129b8105, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ModeSelectController
+  jukugoButton: {fileID: 336525176}
+  busyuButton: {fileID: 185888540}
+  yomiButton: {fileID: 409881594}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

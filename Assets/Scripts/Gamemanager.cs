@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
+
 
 public class GameManager : MonoBehaviour
 {
@@ -57,23 +59,24 @@ public class GameManager : MonoBehaviour
         audioSource =
             GetComponent<AudioSource>();
 
-
         CurrentRegistry =
             KanjiRegistry.Entries;
-
 
         if (kanjiDisplay != null)
         {
             kanjiDisplay.SetIdiom("");
         }
 
-
         if (meaningDisplay != null)
         {
             meaningDisplay.SetMeaning("");
         }
 
-
+        // ★ ここではまだゲーム開始しない（SpawnCapsule を呼ばない）
+    }
+    public void StartGame()
+    {
+        // ★ ゲーム開始時に呼ぶ処理
         SpawnCapsule();
     }
 
