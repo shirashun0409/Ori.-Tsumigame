@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using DG.Tweening;
 
 public class ShogiOpen3D : MonoBehaviour
@@ -9,12 +10,14 @@ public class ShogiOpen3D : MonoBehaviour
     public GameObject logoGroup;
     public GameObject pressToStart;
 
-    public Camera mainCamera;   // ← Step2 追加
+    public Camera mainCamera;
 
     public void CameraZoom()
     {
-        mainCamera.transform.DOMoveZ(mainCamera.transform.position.z + 3f, 1f)
-            .SetEase(Ease.InOutQuad);
+        mainCamera.transform.DOMoveZ(
+            mainCamera.transform.position.z + 3f,
+            1f
+        ).SetEase(Ease.InOutQuad);
     }
 
     public void OpenShoji()
@@ -22,14 +25,36 @@ public class ShogiOpen3D : MonoBehaviour
         // ① ロゴを消す
         logoGroup.SetActive(false);
 
-        // ② PressToStart を消す
+        // ② PressToStartを消す
         pressToStart.SetActive(false);
 
-        // ③ カメラを前にズーム（Step2）
-        CameraZoom();
+        // ③ カメラを前にズーム
+        mainCamera.transform.DOMoveZ(
+            mainCamera.transform.position.z + 3f,
+            1f
+        ).SetEase(Ease.InOutQuad);
 
         // ④ 障子を開く
-        leftShoji.DOMoveX(leftShoji.position.x - 9f, 1f).SetEase(Ease.InOutQuad);
-        rightShoji.DOMoveX(rightShoji.position.x + 9f, 1f).SetEase(Ease.InOutQuad);
+        Sequence sequence = DOTween.Sequence();
+
+        sequence.Join(
+            leftShoji.DOMoveX(
+                leftShoji.position.x - 9f,
+                1f
+            ).SetEase(Ease.InOutQuad)
+        );
+
+        sequence.Join(
+            rightShoji.DOMoveX(
+                rightShoji.position.x + 9f,
+                1f
+            ).SetEase(Ease.InOutQuad)
+        );
+
+        // ⑤ 障子が開き終わったらStartSceneへ
+        sequence.OnComplete(() =>
+        {
+            SceneManager.LoadScene("StartScene");
+        });
     }
 }
