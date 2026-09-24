@@ -44,14 +44,14 @@ public class ShogiOpen3D : MonoBehaviour
 
         sequence.Join(
             leftShoji.DOMoveX(
-                leftShoji.position.x - 9f,
+                leftShoji.position.x - 12f,
                 1f
             ).SetEase(Ease.InOutQuad)
         );
 
         sequence.Join(
             rightShoji.DOMoveX(
-                rightShoji.position.x + 9f,
+                rightShoji.position.x + 12f,
                 1f
             ).SetEase(Ease.InOutQuad)
         );

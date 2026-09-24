@@ -313,28 +313,11 @@ public class BoardManager : MonoBehaviour
                     if (part == null)
                         continue;
 
-                    bool belowEmpty =
-                        board[x, y + 1] == null;
-
-                    if (!belowEmpty)
+                    // 真下が空いているなら落下する
+                    if (board[x, y + 1] != null)
                         continue;
 
-                    bool hasLeftSupport =
-                        x > 0 &&
-                        board[x - 1, y] != null &&
-                        board[x - 1, y + 1] != null;
-
-                    bool hasRightSupport =
-                        x < Width - 1 &&
-                        board[x + 1, y] != null &&
-                        board[x + 1, y + 1] != null;
-
-                    if (hasLeftSupport ||
-                        hasRightSupport)
-                    {
-                        continue;
-                    }
-
+                    // 1マス下へ移動
                     board[x, y + 1] = part;
                     board[x, y] = null;
 
@@ -348,9 +331,11 @@ public class BoardManager : MonoBehaviour
                 }
             }
 
+            // 今回まったく動かなければ終了
             if (!movedThisStep)
                 break;
 
+            // 1マスずつ落ちる演出
             yield return new WaitForSeconds(
                 gravityFallInterval
             );
