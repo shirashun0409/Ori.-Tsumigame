@@ -1,10 +1,12 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using TMPro;
 
 
 public class GameManager : MonoBehaviour
 {
+    public static int LastScore;
     public static GameManager Instance { get; private set; }
 
 
@@ -365,6 +367,19 @@ public class GameManager : MonoBehaviour
 
         isGameOver = true;
 
+        // 現在のスコアを保存
+        if (ScoreManager.Instance != null)
+        {
+            LastScore = ScoreManager.Instance.GetScore();
+        }
+        else
+        {
+            LastScore = 0;
+        }
+
         Debug.Log("GAME OVER");
+        Debug.Log("最終スコア: " + LastScore);
+
+        SceneManager.LoadScene("GameOverScene");
     }
 }
