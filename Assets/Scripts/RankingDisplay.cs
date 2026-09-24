@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public class RankingDisplay : MonoBehaviour
 {
@@ -16,7 +17,10 @@ public class RankingDisplay : MonoBehaviour
     {
         DisplayRanking();
     }
-
+    public void BackToGameOver()
+    {
+        SceneManager.LoadScene("GameOverScene");
+    }
     public void DisplayRanking()
     {
         if (rankText == null)

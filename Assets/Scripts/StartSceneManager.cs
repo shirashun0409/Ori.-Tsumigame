@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using DG.Tweening;
+using TMPro;
+using UnityEngine.UI;
+
 
 public class StartSceneManager : MonoBehaviour
 {
@@ -16,6 +19,12 @@ public class StartSceneManager : MonoBehaviour
     [SerializeField] private float slideDistance = 1800f;
     [SerializeField] private float duration = 0.6f;
 
+    [Header("ページ表示")]
+    [SerializeField] private TMP_Text pageIndicator;
+    [SerializeField] private TMP_Text slideGuide;
+
+    [SerializeField] private GameObject leftArrow;
+    [SerializeField] private GameObject rightArrow;
     private int currentIndex = 0;
     private bool isMoving = false;
 
@@ -43,7 +52,6 @@ public class StartSceneManager : MonoBehaviour
 
         currentIndex = 0;
 
-        // 最初のスライドだけ中央に置く
         for (int i = 0; i < slides.Length; i++)
         {
             if (i == 0)
@@ -55,6 +63,13 @@ public class StartSceneManager : MonoBehaviour
                 slides[i].anchoredPosition =
                     new Vector2(slideDistance, 0f);
             }
+        }
+
+        UpdatePageIndicator();
+
+        if (slideGuide != null)
+        {
+            slideGuide.gameObject.SetActive(true);
         }
     }
 
@@ -82,10 +97,18 @@ public class StartSceneManager : MonoBehaviour
         )
         .SetEase(Ease.InOutCubic)
         .OnComplete(() =>
-        {
-            currentIndex++;
-            isMoving = false;
-        });
+{
+    currentIndex++;
+
+    UpdatePageIndicator();
+
+    if (slideGuide != null)
+    {
+        slideGuide.gameObject.SetActive(false);
+    }
+
+    isMoving = false;
+});
     }
 
     // 左タッチ → 前の画像へ
@@ -112,15 +135,50 @@ public class StartSceneManager : MonoBehaviour
         )
         .SetEase(Ease.InOutCubic)
         .OnComplete(() =>
-        {
-            currentIndex--;
-            isMoving = false;
-        });
+{
+    currentIndex--;
+
+    UpdatePageIndicator();
+
+    isMoving = false;
+});
     }
 
     // 最後の画像でゲーム開始
     public void StartGame()
     {
         SceneManager.LoadScene("GameScene");
+    }
+    private void UpdatePageIndicator()
+    {
+        if (pageIndicator != null)
+        {
+            string result = "";
+
+            for (int i = 0; i < slides.Length; i++)
+            {
+                if (i == currentIndex)
+                    result += "●";
+                else
+                    result += "○";
+
+                if (i < slides.Length - 1)
+                    result += " ";
+            }
+
+            pageIndicator.text = result;
+        }
+
+        // 一番左なら左矢印を消す
+        if (leftArrow != null)
+        {
+            leftArrow.SetActive(currentIndex > 0);
+        }
+
+        // 一番右なら右矢印を消す
+        if (rightArrow != null)
+        {
+            rightArrow.SetActive(currentIndex < slides.Length - 1);
+        }
     }
 }
