@@ -58,6 +58,10 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        if (GameResultManager.Instance != null)
+        {
+            GameResultManager.Instance.ResetResult();
+        }
         audioSource =
             GetComponent<AudioSource>();
 

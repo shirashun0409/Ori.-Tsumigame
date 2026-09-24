@@ -515,6 +515,19 @@ public class BoardManager : MonoBehaviour
 
 
             //==================================================
+            // 今回のゲームで作った熟語を記録
+            //==================================================
+
+            if (GameResultManager.Instance != null)
+            {
+                foreach (string idiom in idioms)
+                {
+                    GameResultManager.Instance.AddIdiom(idiom);
+                }
+            }
+
+
+            //==================================================
             // 熟語表示
             //==================================================
 

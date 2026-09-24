@@ -12,6 +12,8 @@ public class ShogiOpen3D : MonoBehaviour
 
     public Camera mainCamera;
 
+    private bool isOpened = false; // ← 追加：一度だけ実行するためのフラグ
+
     public void CameraZoom()
     {
         mainCamera.transform.DOMoveZ(
@@ -22,6 +24,9 @@ public class ShogiOpen3D : MonoBehaviour
 
     public void OpenShoji()
     {
+        if (isOpened) return; // ← 追加：2回目以降は無視
+        isOpened = true;      // ← 追加：一度実行したらロック
+
         // ① ロゴを消す
         logoGroup.SetActive(false);
 
