@@ -203,6 +203,12 @@ public class BoardManager : MonoBehaviour
         board[leftX, leftY] = leftPart;
         board[rightX, rightY] = rightPart;
 
+        ScoreManager.Instance.ResetCombo();
+        if (ScoreManager.Instance != null)
+        {
+            ScoreManager.Instance.ResetCombo();
+        }
+
         left.transform.SetParent(transform);
         right.transform.SetParent(transform);
 
@@ -421,6 +427,17 @@ public class BoardManager : MonoBehaviour
 
         while (true)
         {
+            //==================================================
+            // 一時停止中なら、再開するまで待つ
+            //==================================================
+
+            while (GamePauseManager.Instance != null &&
+                   GamePauseManager.Instance.IsPaused)
+            {
+                yield return null;
+            }
+
+
             List<IdiomMatch> matches =
                 KanjiMatchFinder.FindIdiomMatches();
 
@@ -607,9 +624,9 @@ public class BoardManager : MonoBehaviour
             if (ReadingText != null)
             {
                 ReadingText.text = string.Join(
-      "　",
-      readings
-  );
+                    "　",
+                    readings
+                );
             }
 
 

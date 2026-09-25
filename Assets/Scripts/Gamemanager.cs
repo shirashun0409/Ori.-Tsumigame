@@ -9,6 +9,12 @@ public class GameManager : MonoBehaviour
     public static int LastScore;
     public static GameManager Instance { get; private set; }
 
+    //==================================================
+    // 今回のゲームでランキング登録したか
+    //==================================================
+
+    public static bool RankingRegisteredThisGame = false;
+
 
     [Header("Prefab")]
     [SerializeField] private GameObject capsulePrefab;
@@ -32,8 +38,7 @@ public class GameManager : MonoBehaviour
     public AudioClip eraseSE;
     public AudioClip comboSE;
     public AudioClip rotateSE;
-
-
+    public AudioClip buttonSE;
     private AudioSource audioSource;
 
 
@@ -62,6 +67,7 @@ public class GameManager : MonoBehaviour
         {
             GameResultManager.Instance.ResetResult();
         }
+
         audioSource =
             GetComponent<AudioSource>();
 
@@ -78,12 +84,39 @@ public class GameManager : MonoBehaviour
             meaningDisplay.SetMeaning("");
         }
 
-        // ★ ここではまだゲーム開始しない（SpawnCapsule を呼ばない）
+        // ★ ここではまだゲーム開始しない
     }
+
+
     public void StartGame()
     {
-        // ★ ゲーム開始時に呼ぶ処理
+        //==================================================
+        // ★ 新しいゲーム開始時にランキング登録状態をリセット
+        //==================================================
+
+        RankingRegisteredThisGame = false;
+
+        // 前回の「今回の登録情報」も消す
+        PlayerPrefs.DeleteKey("LastRankingRegistered");
+        PlayerPrefs.DeleteKey("LastRankingNickname");
+        PlayerPrefs.DeleteKey("LastRankingScore");
+
+        PlayerPrefs.Save();
+
+        Debug.Log("新しいゲーム開始：ランキング登録状態をリセットしました。");
+
+        // ゲーム開始
         SpawnCapsule();
+    }
+
+
+    //==================================================
+    // ランキング登録済みにする
+    //==================================================
+
+    public static void SetRankingRegistered()
+    {
+        RankingRegisteredThisGame = true;
     }
 
 
@@ -99,6 +132,13 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void PlayButtonSE()
+    {
+        if (buttonSE != null)
+        {
+            audioSource.PlayOneShot(buttonSE);
+        }
+    }
     //==================================================
     // ゲームオーバー判定
     //==================================================
@@ -108,8 +148,6 @@ public class GameManager : MonoBehaviour
         int spawnX = 3;
         int spawnY = 0;
 
-        // カプセルの最初の向きでは
-        // 左右2マスを使用する
         int secondX = spawnX + 1;
         int secondY = spawnY;
 
@@ -122,17 +160,16 @@ public class GameManager : MonoBehaviour
         return true;
     }
 
+
     //==================================================
     // カプセル生成
     //==================================================
 
     public void SpawnCapsule()
     {
-        // ゲームオーバー後は新しいカプセルを生成しない
         if (isGameOver)
             return;
 
-        // 出現位置が埋まっていたらゲームオーバー
         if (!CanSpawnCapsule())
         {
             GameOver();
@@ -144,14 +181,11 @@ public class GameManager : MonoBehaviour
             GameObject firstObj =
                 Instantiate(capsulePrefab);
 
-
             nextCapsule =
                 firstObj.GetComponent<Capsule>();
 
-
             nextCapsule.isNextPreview =
                 true;
-
 
             KanjiData left =
                 KanjiDatabase.GetRandomKanji();
@@ -159,12 +193,10 @@ public class GameManager : MonoBehaviour
             KanjiData right =
                 KanjiDatabase.GetRandomKanji();
 
-
             nextCapsule.SetKanjiForNext(
                 left,
                 right
             );
-
 
             firstObj.transform.position =
                 new Vector3(
@@ -172,7 +204,6 @@ public class GameManager : MonoBehaviour
                     999,
                     0
                 );
-
 
             nextDisplay.SetNextSprites(
                 nextCapsule.GetLeftSprite(),
@@ -184,13 +215,11 @@ public class GameManager : MonoBehaviour
         currentCapsule =
             nextCapsule;
 
-
         currentCapsule.transform.position =
             BoardManager.Instance.GridToWorld(
                 3,
                 0
             );
-
 
         currentCapsule.isNextPreview =
             false;
@@ -199,10 +228,8 @@ public class GameManager : MonoBehaviour
         GameObject obj =
             Instantiate(capsulePrefab);
 
-
         nextCapsule =
             obj.GetComponent<Capsule>();
-
 
         nextCapsule.isNextPreview =
             true;
@@ -259,7 +286,7 @@ public class GameManager : MonoBehaviour
     //==================================================
 
     public void OnIdiomsCreated(
-    List<string> idioms)
+        List<string> idioms)
     {
         if (idioms == null ||
             idioms.Count == 0)
@@ -268,10 +295,6 @@ public class GameManager : MonoBehaviour
         }
 
 
-        //==============================================
-        // 熟語表示
-        //==============================================
-
         if (kanjiDisplay != null)
         {
             kanjiDisplay.SetIdioms(
@@ -279,10 +302,6 @@ public class GameManager : MonoBehaviour
             );
         }
 
-
-        //==============================================
-        // 意味表示
-        //==============================================
 
         if (meaningDisplay != null)
         {
@@ -300,8 +319,6 @@ public class GameManager : MonoBehaviour
 
                 if (!string.IsNullOrEmpty(meaning))
                 {
-                    // 熟語名は表示せず、
-                    // 意味だけを追加する
                     meanings.Add(
                         meaning
                     );
@@ -309,7 +326,6 @@ public class GameManager : MonoBehaviour
             }
 
 
-            // 複数の意味は改行して表示
             meaningDisplay.SetMeaning(
                 string.Join(
                     "\n",
@@ -318,6 +334,7 @@ public class GameManager : MonoBehaviour
             );
         }
     }
+
 
     //==================================================
     // ゲームモード
@@ -360,6 +377,8 @@ public class GameManager : MonoBehaviour
         return currentMode ==
                GameMode.Reading;
     }
+
+
     //==================================================
     // ゲームオーバー
     //==================================================
@@ -374,7 +393,8 @@ public class GameManager : MonoBehaviour
         // 現在のスコアを保存
         if (ScoreManager.Instance != null)
         {
-            LastScore = ScoreManager.Instance.GetScore();
+            LastScore =
+                ScoreManager.Instance.GetScore();
         }
         else
         {
@@ -387,3 +407,4 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene("GameOverScene");
     }
 }
+

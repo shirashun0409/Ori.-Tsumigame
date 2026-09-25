@@ -1,3 +1,4 @@
+
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
@@ -10,17 +11,28 @@ public class RankingDisplay : MonoBehaviour
     [SerializeField] private TMP_Text scoreText;
     [SerializeField] private TMP_Text nameText;
 
+    // ★ あなたの順位を表示するText
+    [SerializeField] private TMP_Text yourRankText;
+
     [Header("Ranking")]
     [SerializeField] private RankingManager rankingManager;
+
+    // GameOverSceneから受け取った情報
+    private const string RegisteredKey = "LastRankingRegistered";
+    private const string NicknameKey = "LastRankingNickname";
+    private const string ScoreKey = "LastRankingScore";
 
     private void Start()
     {
         DisplayRanking();
+        DisplayYourRank();
     }
+
     public void BackToGameOver()
     {
         SceneManager.LoadScene("GameOverScene");
     }
+
     public void DisplayRanking()
     {
         if (rankText == null)
@@ -77,4 +89,82 @@ public class RankingDisplay : MonoBehaviour
         scoreText.text = scores;
         nameText.text = names;
     }
+
+    // ========================================
+    // あなたの順位を表示
+    // ========================================
+    private void DisplayYourRank()
+    {
+        // Textが設定されていなければ終了
+        if (yourRankText == null)
+        {
+            Debug.LogWarning(
+                "YourRankTextが設定されていません！"
+            );
+            return;
+        }
+
+        // まず非表示にする
+        yourRankText.gameObject.SetActive(false);
+
+        // 今回ニックネーム登録したか確認
+        int registered =
+            PlayerPrefs.GetInt(
+                RegisteredKey,
+                0
+            );
+
+        // 登録していないなら何も表示しない
+        if (registered != 1)
+        {
+            return;
+        }
+
+        // ニックネーム取得
+        string nickname =
+            PlayerPrefs.GetString(
+                NicknameKey,
+                ""
+            );
+
+        // スコア取得
+        int score =
+            PlayerPrefs.GetInt(
+                ScoreKey,
+                0
+            );
+
+        // ニックネームが空なら表示しない
+        if (string.IsNullOrEmpty(nickname))
+        {
+            return;
+        }
+
+        // 順位を取得
+        int rank =
+            rankingManager.GetRank(
+                nickname,
+                score
+            );
+
+        // 順位が取得できなかった場合
+        if (rank <= 0)
+        {
+            return;
+        }
+
+        // ★ ここで表示
+        yourRankText.gameObject.SetActive(true);
+
+        yourRankText.text =
+            +rank
+            + "位";
+
+        Debug.Log(
+
+            +rank
+            + "位"
+        );
+    }
 }
+

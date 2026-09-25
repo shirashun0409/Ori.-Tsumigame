@@ -16,6 +16,10 @@ public class GameOverManager : MonoBehaviour
 
     private bool isRegistered = false;
 
+    private const string RegisteredKey = "LastRankingRegistered";
+    private const string NicknameKey = "LastRankingNickname";
+    private const string ScoreKey = "LastRankingScore";
+
     private void Start()
     {
         // スコア表示
@@ -29,10 +33,16 @@ public class GameOverManager : MonoBehaviour
                 GameManager.LastScore.ToString("N0");
         }
 
+        // 現在のゲームですでに登録済みか確認
+        isRegistered =
+            GameManager.RankingRegisteredThisGame;
+
         // ランキング登録ボタン
         if (rankingRegisterButton != null)
         {
-            rankingRegisterButton.onClick.AddListener(RegisterRanking);
+            rankingRegisterButton.onClick.AddListener(
+                RegisterRanking
+            );
         }
         else
         {
@@ -40,29 +50,61 @@ public class GameOverManager : MonoBehaviour
                 "RankingRegisterButtonが設定されていません！"
             );
         }
+
+        // GameOverSceneでは順位を表示しない
+        if (yourRankText != null)
+        {
+            yourRankText.gameObject.SetActive(false);
+        }
+
+        // すでに登録済みならボタンを無効化
+        if (isRegistered)
+        {
+            if (rankingRegisterButton != null)
+            {
+                rankingRegisterButton.interactable = false;
+            }
+
+            Debug.Log(
+                "このゲームではすでにランキング登録済みです。"
+            );
+        }
     }
 
-    public void OpenRanking()
 
+    public void OpenRanking()
     {
         SceneManager.LoadScene("RankingScene");
     }
+
+
     public void RetryGame()
     {
         SceneManager.LoadScene("GameScene");
     }
 
+
     public void BackToModeSelect()
     {
         SceneManager.LoadScene("StartScene");
     }
+
+
     private void RegisterRanking()
     {
-        if (isRegistered)
+        //==================================================
+        // ★ すでに登録済みなら絶対に登録しない
+        //==================================================
+
+        if (isRegistered ||
+            GameManager.RankingRegisteredThisGame)
         {
-            Debug.Log("すでにランキング登録済みです。");
+            Debug.Log(
+                "このゲームではすでにランキング登録済みです。"
+            );
             return;
         }
+
 
         if (rankingManager == null)
         {
@@ -72,8 +114,12 @@ public class GameOverManager : MonoBehaviour
             return;
         }
 
-        string nickname = nicknameInput.text.Trim();
 
+        string nickname =
+            nicknameInput.text.Trim();
+
+
+        // ニックネーム未入力
         if (string.IsNullOrEmpty(nickname))
         {
             Debug.LogWarning(
@@ -82,48 +128,65 @@ public class GameOverManager : MonoBehaviour
             return;
         }
 
-        int score = GameManager.LastScore;
 
-        // ランキングに登録
+        int score =
+            GameManager.LastScore;
+
+
+        //==================================================
+        // ランキング登録
+        //==================================================
+
         rankingManager.RegisterScore(
             nickname,
             score
         );
 
-        // 今回登録した自分の順位を取得
-        int rank = rankingManager.GetRank(
-            nickname,
+
+        //==================================================
+        // 今回の登録情報を保存
+        //==================================================
+
+        PlayerPrefs.SetInt(
+            RegisteredKey,
+            1
+        );
+
+        PlayerPrefs.SetString(
+            NicknameKey,
+            nickname
+        );
+
+        PlayerPrefs.SetInt(
+            ScoreKey,
             score
         );
 
-        // 順位を画面に表示
-        if (yourRankText != null)
-        {
-            if (rank > 0)
-            {
-                yourRankText.text =
-                    "あなたの順位\n"
-                    + rank
-                    + "位";
-            }
-            else
-            {
-                yourRankText.text =
-                    "あなたの順位\n--位";
-            }
-        }
+        PlayerPrefs.Save();
+
+
+        //==================================================
+        // ★ GameManagerにも登録済みと記録
+        //==================================================
+
+        GameManager.SetRankingRegistered();
 
         isRegistered = true;
+
+
+        // 登録ボタンを無効化
+        if (rankingRegisterButton != null)
+        {
+            rankingRegisterButton.interactable = false;
+        }
+
 
         Debug.Log(
             "ランキング登録完了！ "
             + nickname
             + " / "
             + score
-            + " / "
-            + rank
-            + "位"
         );
     }
-
 }
+

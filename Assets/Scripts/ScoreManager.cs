@@ -19,12 +19,20 @@ public class ScoreManager : MonoBehaviour
     [SerializeField] private int jukugoBonus = 300;
     [SerializeField] private int simultaneousBonus = 200;
 
-    [Header("Combo Settings")]
-    [SerializeField] private float comboLimit = 2.5f;
+    //==================================================
+    // コンボ
+    //
+    // コンボは「自然落下による連鎖」で続く。
+    //
+    // 新しいカプセルが盤面に固定されたときに
+    // ResetCombo() を呼ぶ。
+    //
+    // その後、ChainCoroutine() の中で
+    // AddScore() が呼ばれるたびにコンボが増える。
+    //==================================================
 
     private int score = 0;
     private int combo = 0;
-    private float comboTimer = 0f;
 
 
     //==================================================
@@ -54,42 +62,38 @@ public class ScoreManager : MonoBehaviour
     }
 
 
-    private void Update()
-    {
-        // コンボ中
-        if (combo > 0)
-        {
-            comboTimer += Time.deltaTime;
-
-            // 一定時間消去がなければコンボ終了
-            if (comboTimer > comboLimit)
-            {
-                ResetCombo();
-            }
-        }
-    }
-
-
     //==================================================
     // スコア追加
     //==================================================
 
     /// <summary>
     /// スコアを追加する。
-    /// 
+    ///
     /// kanjiCount
     ///     今回消した漢字の数
     ///
     /// jukugoCount
     ///     今回同時に成立した熟語の数
+    ///
+    /// コンボについて：
+    /// 新しいカプセルが盤面に固定されたときに
+    /// ResetCombo() が呼ばれる。
+    ///
+    /// その後、自然落下によって次の熟語が成立すると
+    /// このメソッドが再び呼ばれ、コンボが +1 される。
     /// </summary>
     public void AddScore(
         int kanjiCount,
         int jukugoCount)
     {
+        //==================================================
         // コンボを1つ増やす
+        //
+        // 新しいカプセルが固定されたときには
+        // すでに ResetCombo() が呼ばれている。
+        //==================================================
+
         combo++;
-        comboTimer = 0f;
 
 
         //==================================================
@@ -168,7 +172,11 @@ public class ScoreManager : MonoBehaviour
 
         ShowScorePopup(addScore);
 
-        // デバッグ用
+
+        //==================================================
+        // デバッグ
+        //==================================================
+
         Debug.Log(
             "スコア追加: "
             + addScore
@@ -181,6 +189,9 @@ public class ScoreManager : MonoBehaviour
             + " / "
             + "同時消去:"
             + rensaScore
+            + " / "
+            + "コンボ:"
+            + combo
             + " / "
             + "倍率:"
             + comboRate
@@ -313,17 +324,21 @@ public class ScoreManager : MonoBehaviour
 
     //==================================================
     // コンボリセット
+    //
+    // 「新しいカプセルが盤面に固定された」ときに
+    // BoardManagerから呼ぶ。
     //==================================================
 
-    private void ResetCombo()
+    public void ResetCombo()
     {
         combo = 0;
-        comboTimer = 0f;
 
         if (comboText != null)
         {
             comboText.text = "";
         }
+
+        Debug.Log("コンボリセット");
     }
 
 
@@ -357,7 +372,6 @@ public class ScoreManager : MonoBehaviour
     {
         score = 0;
         combo = 0;
-        comboTimer = 0f;
 
         if (scoreText != null)
         {
@@ -369,6 +383,12 @@ public class ScoreManager : MonoBehaviour
             comboText.text = "";
         }
     }
+
+
+    //==================================================
+    // スコアポップアップ
+    //==================================================
+
     private void ShowScorePopup(int addScore)
     {
         if (scorePopupPrefab == null)
@@ -395,13 +415,19 @@ public class ScoreManager : MonoBehaviour
         popupText.text =
             "+" + addScore.ToString("N0");
 
+
         // ScoreTextの少し下を開始位置にする
         popup.transform.position =
             scoreText.transform.position
             + new Vector3(0f, -40f, 0f);
 
         popup.transform.localScale =
-     Vector3.zero;
+            Vector3.zero;
+
+
+        //==================================================
+        // コンボによってポップアップを大きくする
+        //==================================================
 
         float popupScale = 1.0f;
 
@@ -426,12 +452,22 @@ public class ScoreManager : MonoBehaviour
             popupScale = 1.9f;
         }
 
+
+        //==================================================
+        // 出現
+        //==================================================
+
         popup.transform
-     .DOScale(
-         popupScale,
-         0.2f
-     )
-     .SetEase(Ease.OutBack);
+            .DOScale(
+                popupScale,
+                0.2f
+            )
+            .SetEase(Ease.OutBack);
+
+
+        //==================================================
+        // 少し弾ませる
+        //==================================================
 
         popup.transform
             .DOPunchScale(
@@ -442,12 +478,22 @@ public class ScoreManager : MonoBehaviour
             )
             .SetDelay(0.2f);
 
+
+        //==================================================
+        // 上に移動
+        //==================================================
+
         popup.transform
             .DOMoveY(
                 popup.transform.position.y + 50f,
                 1.2f
             )
             .SetEase(Ease.OutQuad);
+
+
+        //==================================================
+        // フェードアウト
+        //==================================================
 
         popupText
             .DOFade(

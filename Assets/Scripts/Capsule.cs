@@ -81,6 +81,12 @@ public class Capsule : MonoBehaviour
 
     private void Update()
     {
+        if (GamePauseManager.Instance != null &&
+            GamePauseManager.Instance.IsPaused)
+        {
+            return;
+        }
+
         if (!isLanded && !isNextPreview)
         {
             Move();
