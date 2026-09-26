@@ -39,13 +39,36 @@ public class GameManager : MonoBehaviour
     public AudioClip comboSE;
     public AudioClip rotateSE;
     public AudioClip buttonSE;
+
+    // カウントダウンSE
+    public AudioClip countThreeSE;
+    public AudioClip countTwoSE;
+    public AudioClip countOneSE;
+    public AudioClip startSE;
     private AudioSource audioSource;
+
+
+    //==================================================
+    // BGM
+    //==================================================
+
+    [Header("Game BGM")]
+    [SerializeField] private AudioClip gameBGM;
+
+    [Tooltip("BGMが最大音量になるまでの時間")]
+    [SerializeField] private float bgmFadeInDuration = 2.0f;
+
+    [SerializeField] private float bgmVolume = 0.5f;
+
+    private AudioSource bgmAudioSource;
 
 
     [Header("UI")]
     [SerializeField] private KanjiDisplay kanjiDisplay;
     [SerializeField] private MeaningDisplay meaningDisplay;
     [SerializeField] private NextDisplay nextDisplay;
+
+
 
 
     private void Awake()
@@ -58,8 +81,35 @@ public class GameManager : MonoBehaviour
         }
 
         Instance = this;
-    }
 
+
+        //==================================================
+        // SE用AudioSource
+        //==================================================
+
+        audioSource =
+            GetComponent<AudioSource>();
+
+        if (audioSource == null)
+        {
+            audioSource =
+                gameObject.AddComponent<AudioSource>();
+        }
+
+        audioSource.playOnAwake = false;
+
+
+        //==================================================
+        // BGM用AudioSource
+        //==================================================
+
+        bgmAudioSource =
+            gameObject.AddComponent<AudioSource>();
+
+        bgmAudioSource.playOnAwake = false;
+        bgmAudioSource.loop = true;
+        bgmAudioSource.volume = 0f;
+    }
 
     private void Start()
     {
@@ -68,8 +118,22 @@ public class GameManager : MonoBehaviour
             GameResultManager.Instance.ResetResult();
         }
 
+
+        //==================================================
+        // SE用AudioSource
+        //==================================================
+
         audioSource =
             GetComponent<AudioSource>();
+
+        if (audioSource == null)
+        {
+            audioSource =
+                gameObject.AddComponent<AudioSource>();
+        }
+
+        audioSource.playOnAwake = false;
+
 
         CurrentRegistry =
             KanjiRegistry.Entries;
@@ -86,8 +150,6 @@ public class GameManager : MonoBehaviour
 
         // ★ ここではまだゲーム開始しない
     }
-
-
     public void StartGame()
     {
         //==================================================
@@ -96,16 +158,21 @@ public class GameManager : MonoBehaviour
 
         RankingRegisteredThisGame = false;
 
-        // 前回の「今回の登録情報」も消す
         PlayerPrefs.DeleteKey("LastRankingRegistered");
         PlayerPrefs.DeleteKey("LastRankingNickname");
         PlayerPrefs.DeleteKey("LastRankingScore");
 
         PlayerPrefs.Save();
 
-        Debug.Log("新しいゲーム開始：ランキング登録状態をリセットしました。");
+        Debug.Log(
+            "新しいゲーム開始：ランキング登録状態をリセットしました。"
+        );
 
+
+        //==================================================
         // ゲーム開始
+        //==================================================
+
         SpawnCapsule();
     }
 
@@ -405,6 +472,58 @@ public class GameManager : MonoBehaviour
         Debug.Log("最終スコア: " + LastScore);
 
         SceneManager.LoadScene("GameOverScene");
+    }
+    //==================================================
+    // ゲームBGM
+    //==================================================
+
+    public void StartGameBGM()
+    {
+        if (gameBGM == null)
+        {
+            Debug.LogWarning("GameManager: ゲームBGMが設定されていません。");
+            return;
+        }
+
+        if (bgmAudioSource == null)
+        {
+            Debug.LogWarning("GameManager: BGM用AudioSourceがありません。");
+            return;
+        }
+
+        bgmAudioSource.Stop();
+
+        bgmAudioSource.clip = gameBGM;
+
+        bgmAudioSource.volume = 0f;
+
+        bgmAudioSource.Play();
+
+        StartCoroutine(FadeInBGM());
+    }
+
+    private System.Collections.IEnumerator FadeInBGM()
+    {
+        float timer = 0f;
+
+        while (timer < bgmFadeInDuration)
+        {
+            timer += Time.deltaTime;
+
+            float progress =
+                timer / bgmFadeInDuration;
+
+            bgmAudioSource.volume =
+                Mathf.Lerp(
+                    0f,
+                    bgmVolume,
+                    progress
+                );
+
+            yield return null;
+        }
+
+        bgmAudioSource.volume = bgmVolume;
     }
 }
 

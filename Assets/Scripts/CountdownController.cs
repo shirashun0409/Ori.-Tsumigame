@@ -12,41 +12,92 @@ public class CountdownController : MonoBehaviour
         StartCoroutine(CountdownRoutine());
     }
 
+
     private IEnumerator CountdownRoutine()
     {
         countdownText.gameObject.SetActive(true);
 
+
+        //==================================================
         // 三
+        //==================================================
+
+        PlayCountdownSE(GameManager.Instance.countThreeSE);
+
         yield return ShowCount("三");
 
+
+        //==================================================
         // 二
+        //==================================================
+
+        PlayCountdownSE(GameManager.Instance.countTwoSE);
+
         yield return ShowCount("二");
 
+
+        //==================================================
         // 一
+        //==================================================
+
+        PlayCountdownSE(GameManager.Instance.countOneSE);
+
         yield return ShowCount("一");
 
+
+        //==================================================
         // はじめ！
+        //==================================================
+
         countdownText.text = "はじめ！";
 
-        // ★ はじめだけフォントサイズを小さくする（例：150）
+        // はじめだけフォントサイズを小さくする
         countdownText.fontSize = 170;
 
-        // 黒色に統一
-        countdownText.color = new Color(0f, 0f, 0f, 0f);
+        // 黒色・透明
+        countdownText.color =
+            new Color(0f, 0f, 0f, 0f);
 
-        // 初期状態（小さく透明）
-        countdownText.transform.localScale = Vector3.zero;
+        // 初期状態
+        countdownText.transform.localScale =
+            Vector3.zero;
 
-        // ポンッと膨らむ
+
+        //==================================================
+        // はじめ！SE
+        //==================================================
+
+        PlayCountdownSE(GameManager.Instance.startSE);
+
+
+        //==================================================
+        // BGM開始
+        //==================================================
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.StartGameBGM();
+        }
+
+
+        //==================================================
+        // 「はじめ！」の演出
+        //==================================================
+
         countdownText.transform
             .DOScale(1.0f, 0.5f)
             .SetEase(Ease.OutBack);
 
-        // フェードイン
         countdownText.DOFade(1f, 0.5f);
 
-        // ★ はじめのあと少し待つ（テンポ調整）
+
+        // 「はじめ！」を少し表示
         yield return new WaitForSeconds(1.0f);
+
+
+        //==================================================
+        // カウントダウン終了
+        //==================================================
 
         countdownText.gameObject.SetActive(false);
 
@@ -54,16 +105,21 @@ public class CountdownController : MonoBehaviour
     }
 
 
-    // 数字の演出をまとめた関数
+    //==================================================
+    // 数字の演出
+    //==================================================
+
     private IEnumerator ShowCount(string text)
     {
         countdownText.text = text;
 
         // 黒色に統一
-        countdownText.color = new Color(0f, 0f, 0f, 0f);
+        countdownText.color =
+            new Color(0f, 0f, 0f, 0f);
 
         // 初期状態
-        countdownText.transform.localScale = Vector3.zero;
+        countdownText.transform.localScale =
+            Vector3.zero;
 
         // ポンッと出る
         countdownText.transform
@@ -73,7 +129,23 @@ public class CountdownController : MonoBehaviour
         // フェードイン
         countdownText.DOFade(1f, 0.4f);
 
-        // ★ テンポをゆっくりに（1.2秒）
+        // テンポ
         yield return new WaitForSeconds(1.2f);
+    }
+
+
+    //==================================================
+    // カウントダウンSE
+    //==================================================
+
+    private void PlayCountdownSE(AudioClip clip)
+    {
+        if (clip == null)
+            return;
+
+        if (GameManager.Instance == null)
+            return;
+
+        GameManager.Instance.PlaySE(clip);
     }
 }

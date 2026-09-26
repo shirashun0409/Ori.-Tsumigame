@@ -2362,11 +2362,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   capsulePrefab: {fileID: 4441344553771492615, guid: 746bf97528ee5314ba02abd6a36225be, type: 3}
   currentMode: 0
-  dropSE: {fileID: 8300000, guid: a7e4ed78fe8c1af41a484b050ca663cd, type: 3}
-  eraseSE: {fileID: 8300000, guid: e4cd42915f071984a821e5cfba524530, type: 3}
+  dropSE: {fileID: 8300000, guid: 377eef7e3da25004381726e8841f6f43, type: 3}
+  eraseSE: {fileID: 8300000, guid: 4e3d01dda2a8c6345825734589840355, type: 3}
   comboSE: {fileID: 0}
   rotateSE: {fileID: 0}
   buttonSE: {fileID: 8300000, guid: c9ae2dc2b24deeb4dac3a32f4c3e4d47, type: 3}
+  countThreeSE: {fileID: 8300000, guid: dd12d3a57b7aa544f938bb16db2b794b, type: 3}
+  countTwoSE: {fileID: 8300000, guid: dd12d3a57b7aa544f938bb16db2b794b, type: 3}
+  countOneSE: {fileID: 8300000, guid: dd12d3a57b7aa544f938bb16db2b794b, type: 3}
+  startSE: {fileID: 8300000, guid: 377eef7e3da25004381726e8841f6f43, type: 3}
+  gameBGM: {fileID: 8300000, guid: 702a8711cc68b5a40a542e8334d369a8, type: 3}
+  bgmFadeInDuration: 1.5
+  bgmVolume: 0.147
   kanjiDisplay: {fileID: 851048673}
   meaningDisplay: {fileID: 1504591240}
   nextDisplay: {fileID: 566002739}
@@ -2382,10 +2389,10 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
-  m_PlayOnAwake: 0
-  m_Volume: 1
+  m_PlayOnAwake: 1
+  m_Volume: 0.147
   m_Pitch: 1
-  Loop: 0
+  Loop: 1
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0

@@ -446,7 +446,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a5013c0373eecc4384df5c369338567, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIAudioManager
-  buttonSE: {fileID: 8300000, guid: 095dd7f39dd8d754ea2ebd2bb187d3a9, type: 3}
+  buttonSoundGroups:
+  - groupName: "\u57FA\u672C\u30AF\u30EA\u30C3\u30AF"
+    sounds:
+    - {fileID: 8300000, guid: 78a51a2e78ff5524fa62a60eb0698a1d, type: 3}
+    lastPlayedIndex: 0
+  - groupName: "\u8AAC\u660E"
+    sounds:
+    - {fileID: 8300000, guid: e91d362b88326eb47bf9f96e1d1cbc2c, type: 3}
+    lastPlayedIndex: 0
+  - groupName: "\u767B\u9332"
+    sounds:
+    - {fileID: 8300000, guid: d48dc3bc718448d4da62b1d5a173a26b, type: 3}
+    lastPlayedIndex: 0
 --- !u!1 &520937173
 GameObject:
   m_ObjectHideFlags: 0
@@ -1331,6 +1343,7 @@ GameObject:
   - component: {fileID: 1544797370}
   - component: {fileID: 1544797369}
   - component: {fileID: 1544797368}
+  - component: {fileID: 1544797371}
   m_Layer: 5
   m_Name: TapArea
   m_TagString: Untagged
@@ -1401,9 +1414,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 507514900}
-        m_TargetAssemblyTypeName: UIAudioManager, Assembly-CSharp
-        m_MethodName: PlayButtonSE
+      - m_Target: {fileID: 1544797371}
+        m_TargetAssemblyTypeName: ButtonSE, Assembly-CSharp
+        m_MethodName: Play
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1463,6 +1476,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1544797366}
   m_CullTransparentMesh: 1
+--- !u!114 &1544797371
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1544797366}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb945d31f8d7e6e469c34db26543b9bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSE
+  soundGroupIndex: 0
 --- !u!1 &1885844790
 GameObject:
   m_ObjectHideFlags: 0
