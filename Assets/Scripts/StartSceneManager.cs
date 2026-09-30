@@ -2,8 +2,6 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using DG.Tweening;
 using TMPro;
-using UnityEngine.UI;
-
 
 public class StartSceneManager : MonoBehaviour
 {
@@ -25,13 +23,12 @@ public class StartSceneManager : MonoBehaviour
 
     [SerializeField] private GameObject leftArrow;
     [SerializeField] private GameObject rightArrow;
+
     private int currentIndex = 0;
     private bool isMoving = false;
 
     private void Start()
     {
-        // StartSceneが開いたら、
-        // モード選択ボタンをぽわっと表示
         if (modeSelectController != null)
         {
             modeSelectController.ShowButtons();
@@ -44,16 +41,22 @@ public class StartSceneManager : MonoBehaviour
         }
     }
 
+    //==================================================
     // 熟語モードを押したとき
+    //==================================================
     public void SelectJukugoMode()
     {
         modeSelectGroup.SetActive(false);
         explanationGroup.SetActive(true);
 
         currentIndex = 0;
+        isMoving = false;
 
+        // すべてのTweenを停止
         for (int i = 0; i < slides.Length; i++)
         {
+            slides[i].DOKill();
+
             if (i == 0)
             {
                 slides[i].anchoredPosition = Vector2.zero;
@@ -61,7 +64,7 @@ public class StartSceneManager : MonoBehaviour
             else
             {
                 slides[i].anchoredPosition =
-                    new Vector2(slideDistance, 0f);
+                    new Vector2(slideDistance * i, 0f);
             }
         }
 
@@ -73,82 +76,100 @@ public class StartSceneManager : MonoBehaviour
         }
     }
 
+    //==================================================
     // 右タッチ → 次の画像へ
+    //==================================================
     public void SlideRight()
     {
-        if (isMoving) return;
-        if (currentIndex >= slides.Length - 1) return;
+        if (isMoving)
+            return;
+
+        if (currentIndex >= slides.Length - 1)
+            return;
 
         isMoving = true;
 
-        RectTransform current = slides[currentIndex];
-        RectTransform next = slides[currentIndex + 1];
+        int nextIndex = currentIndex + 1;
 
-        // 現在の画像を左へ流す
-        current.DOAnchorPosX(
-            -slideDistance,
-            duration
-        ).SetEase(Ease.InOutCubic);
+        // すべてのTweenを停止して、
+        // 現在のページ番号を基準に正しい位置へ移動
+        for (int i = 0; i < slides.Length; i++)
+        {
+            slides[i].DOKill();
 
-        // 次の画像を右から中央へ
-        next.DOAnchorPosX(
-            0f,
-            duration
-        )
-        .SetEase(Ease.InOutCubic)
-        .OnComplete(() =>
-{
-    currentIndex++;
+            float targetX =
+                (i - nextIndex) * slideDistance;
 
-    UpdatePageIndicator();
+            slides[i]
+                .DOAnchorPosX(targetX, duration)
+                .SetEase(Ease.InOutCubic);
+        }
 
-    if (slideGuide != null)
-    {
-        slideGuide.gameObject.SetActive(false);
+        currentIndex = nextIndex;
+
+        UpdatePageIndicator();
+
+        if (slideGuide != null)
+        {
+            slideGuide.gameObject.SetActive(false);
+        }
+
+        DOVirtual.DelayedCall(duration, () =>
+        {
+            isMoving = false;
+        });
     }
 
-    isMoving = false;
-});
-    }
-
+    //==================================================
     // 左タッチ → 前の画像へ
+    //==================================================
     public void SlideLeft()
     {
-        if (isMoving) return;
-        if (currentIndex <= 0) return;
+        if (isMoving)
+            return;
+
+        if (currentIndex <= 0)
+            return;
 
         isMoving = true;
 
-        RectTransform current = slides[currentIndex];
-        RectTransform prev = slides[currentIndex - 1];
+        int previousIndex = currentIndex - 1;
 
-        // 現在の画像を右へ流す
-        current.DOAnchorPosX(
-            slideDistance,
-            duration
-        ).SetEase(Ease.InOutCubic);
+        // すべてのTweenを停止して、
+        // 現在のページ番号を基準に正しい位置へ移動
+        for (int i = 0; i < slides.Length; i++)
+        {
+            slides[i].DOKill();
 
-        // 前の画像を左から中央へ
-        prev.DOAnchorPosX(
-            0f,
-            duration
-        )
-        .SetEase(Ease.InOutCubic)
-        .OnComplete(() =>
-{
-    currentIndex--;
+            float targetX =
+                (i - previousIndex) * slideDistance;
 
-    UpdatePageIndicator();
+            slides[i]
+                .DOAnchorPosX(targetX, duration)
+                .SetEase(Ease.InOutCubic);
+        }
 
-    isMoving = false;
-});
+        currentIndex = previousIndex;
+
+        UpdatePageIndicator();
+
+        DOVirtual.DelayedCall(duration, () =>
+        {
+            isMoving = false;
+        });
     }
 
+    //==================================================
     // 最後の画像でゲーム開始
+    //==================================================
     public void StartGame()
     {
         SceneManager.LoadScene("GameScene");
     }
+
+    //==================================================
+    // ページ表示更新
+    //==================================================
     private void UpdatePageIndicator()
     {
         if (pageIndicator != null)
