@@ -695,4 +695,5 @@ public class BoardManager : MonoBehaviour
     {
         return isChainProcessing;
     }
+    s
 }
