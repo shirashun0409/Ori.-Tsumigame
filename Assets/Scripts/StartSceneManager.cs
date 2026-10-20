@@ -46,6 +46,46 @@ public class StartSceneManager : MonoBehaviour
     //==================================================
     public void SelectJukugoMode()
     {
+        // 熟語モードを保存
+        GameModeData.SelectedMode = GameMode.Idiom;
+
+        modeSelectGroup.SetActive(false);
+        explanationGroup.SetActive(true);
+
+        currentIndex = 0;
+        isMoving = false;
+
+        // すべてのTweenを停止
+        for (int i = 0; i < slides.Length; i++)
+        {
+            slides[i].DOKill();
+
+            if (i == 0)
+            {
+                slides[i].anchoredPosition = Vector2.zero;
+            }
+            else
+            {
+                slides[i].anchoredPosition =
+                    new Vector2(slideDistance * i, 0f);
+            }
+        }
+
+        UpdatePageIndicator();
+
+        if (slideGuide != null)
+        {
+            slideGuide.gameObject.SetActive(true);
+        }
+    }
+    //==================================================
+    // 部首モードを押したとき
+    //==================================================
+    public void SelectRadicalMode()
+    {
+        // 部首モードを保存
+        GameModeData.SelectedMode = GameMode.Radical;
+
         modeSelectGroup.SetActive(false);
         explanationGroup.SetActive(true);
 

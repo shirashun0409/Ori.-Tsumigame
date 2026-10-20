@@ -42,6 +42,40 @@ public static class KanjiMatcher
     }
 
 
+    /// <summary>
+    /// 2つの漢字が同じ部首か判定します。
+    /// 部首モードで使用します。
+    /// </summary>
+    public static bool IsRadicalMatch(
+        KanjiData first,
+        KanjiData second)
+    {
+        if (first == null || second == null)
+        {
+            return false;
+        }
+
+        // 同じ漢字同士は成立させない
+        if (first.kanji == second.kanji)
+        {
+            return false;
+        }
+
+        // 部首が同じなら成立
+        if (string.IsNullOrEmpty(first.radical))
+        {
+            return false;
+        }
+
+        if (string.IsNullOrEmpty(second.radical))
+        {
+            return false;
+        }
+
+        return first.radical == second.radical;
+    }
+
+
     private static bool ContainsPartner(
         KanjiData data,
         string targetKanji)

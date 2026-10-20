@@ -674,7 +674,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 185888543}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 759176742}
+        m_TargetAssemblyTypeName: StartSceneManager, Assembly-CSharp
+        m_MethodName: SelectRadicalMode
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &185888543
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -695,7 +707,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 9046434336019485027, guid: 0fe51abd2455ca04da4777e0489f16e9, type: 3}
+  m_Sprite: {fileID: -7728952893521421075, guid: 9ebe76df117a5ad47a2d2aa8a94dc432, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1480,7 +1492,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -7728952893521421075, guid: 9ebe76df117a5ad47a2d2aa8a94dc432, type: 3}
+  m_Sprite: {fileID: 9046434336019485027, guid: 0fe51abd2455ca04da4777e0489f16e9, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

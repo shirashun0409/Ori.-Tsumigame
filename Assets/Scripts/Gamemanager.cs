@@ -118,7 +118,6 @@ public class GameManager : MonoBehaviour
             GameResultManager.Instance.ResetResult();
         }
 
-
         //==================================================
         // SE用AudioSource
         //==================================================
@@ -134,6 +133,16 @@ public class GameManager : MonoBehaviour
 
         audioSource.playOnAwake = false;
 
+        //==================================================
+        // StartSceneで選択したゲームモードを受け取る
+        //==================================================
+
+        currentMode = GameModeData.SelectedMode;
+
+        Debug.Log(
+            "GameSceneで受け取ったゲームモード: " +
+            currentMode
+        );
 
         CurrentRegistry =
             KanjiRegistry.Entries;

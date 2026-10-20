@@ -1,15 +1,15 @@
+
 using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// <see cref="KanjiRegistry"/> の定義を読み込み、ゲーム中の漢字データを提供します。
+/// ゲームモードに応じた漢字データと画像を提供します。
 /// </summary>
 public static class KanjiDatabase
 {
-    private const string SpriteResourcePath = "KanjiSprites/";
-
     private static KanjiData[] kanjiList;
     private static Dictionary<string, KanjiData> byKanji;
+    private static GameMode? initializedMode;
 
     public static KanjiData GetRandomKanji()
     {
@@ -17,7 +17,8 @@ public static class KanjiDatabase
 
         if (kanjiList.Length == 0)
         {
-            Debug.LogError("KanjiRegistry に漢字が登録されていません。");
+            Debug.LogError(
+                "使用できる漢字がありません。KanjiRegistryと画像フォルダを確認してください。");
             return null;
         }
 
@@ -45,7 +46,10 @@ public static class KanjiDatabase
 
     private static void EnsureInitialized()
     {
-        if (kanjiList != null)
+        GameMode mode = GameModeData.SelectedMode;
+
+        // モードが変わっていなければ、初期化を繰り返さない
+        if (kanjiList != null && initializedMode == mode)
         {
             return;
         }
@@ -53,28 +57,64 @@ public static class KanjiDatabase
         var list = new List<KanjiData>();
         byKanji = new Dictionary<string, KanjiData>();
 
+        string spriteFolder = GetSpriteFolder(mode);
+
         foreach (KanjiRegistry.Entry entry in KanjiRegistry.Entries)
         {
+            Sprite sprite = Resources.Load<Sprite>(
+                spriteFolder + entry.Kanji);
+
+            // 部首モードでは、Radicalフォルダに画像がある漢字だけ採用
+            if (mode == GameMode.Radical && sprite == null)
+            {
+                continue;
+            }
+
+            // 熟語・読みモードは、まだ従来の画像を使用
+            if (sprite == null && mode != GameMode.Radical)
+            {
+                sprite = Resources.Load<Sprite>(
+                    "KanjiSprites/" + entry.Kanji);
+            }
+
+            if (sprite == null)
+            {
+                Debug.LogWarning(
+                    $"スプライトが見つかりません: {entry.Kanji}");
+                continue;
+            }
+
             var data = new KanjiData
             {
                 kanji = entry.Kanji,
                 radical = entry.Radical,
                 readings = entry.Readings,
                 idiomPartners = entry.IdiomPartners,
-                sprite = Resources.Load<Sprite>(SpriteResourcePath + entry.Kanji)
+                sprite = sprite
             };
-
-            if (data.sprite == null)
-            {
-                Debug.LogWarning(
-                    $"スプライトが見つかりません: {entry.Kanji} " +
-                    $"(Resources/{SpriteResourcePath}{entry.Kanji})");
-            }
 
             list.Add(data);
             byKanji[entry.Kanji] = data;
         }
 
         kanjiList = list.ToArray();
+        initializedMode = mode;
+
+        Debug.Log(
+            $"{mode}モード：使用できる漢字は{kanjiList.Length}個です。");
+    }
+
+    private static string GetSpriteFolder(GameMode mode)
+    {
+        switch (mode)
+        {
+            case GameMode.Radical:
+                return "KanjiSprites/Radical/";
+
+            case GameMode.Idiom:
+            case GameMode.Reading:
+            default:
+                return "KanjiSprites/";
+        }
     }
 }
