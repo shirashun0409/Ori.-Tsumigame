@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using DG.Tweening;
 
 public class GameResultDisplay : MonoBehaviour
 {
@@ -34,6 +35,10 @@ public class GameResultDisplay : MonoBehaviour
 
     private void Start()
     {
+        Canvas canvas = FindObjectOfType<Canvas>(true);
+        if (canvas != null)
+            MenuSceneEffects.AttachButtonEffects(canvas.transform.root);
+
         // 熟語を取得
         if (GameResultManager.Instance == null)
         {
@@ -193,6 +198,24 @@ public class GameResultDisplay : MonoBehaviour
                     idiomButtonPrefab,
                     idiomListParent
                 );
+
+            MenuSceneEffects.AttachButtonEffect(item);
+            CanvasGroup itemCanvasGroup = item.GetComponent<CanvasGroup>();
+            if (itemCanvasGroup == null)
+                itemCanvasGroup = item.AddComponent<CanvasGroup>();
+            itemCanvasGroup.alpha = 0f;
+            itemCanvasGroup.blocksRaycasts = true;
+            itemCanvasGroup.DOFade(1f, 0.22f)
+                .SetDelay(MenuSceneEffects.ReducedMotion ? 0f : (i - startIndex) * 0.025f);
+
+            Vector3 itemScale = item.transform.localScale;
+            if (!MenuSceneEffects.ReducedMotion)
+            {
+                item.transform.localScale = itemScale * 0.92f;
+                item.transform.DOScale(itemScale, 0.24f)
+                    .SetEase(Ease.OutBack)
+                    .SetDelay((i - startIndex) * 0.025f);
+            }
 
 
             IdiomResultItem resultItem =

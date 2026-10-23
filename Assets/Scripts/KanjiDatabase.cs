@@ -112,9 +112,11 @@ public static class KanjiDatabase
                 return "KanjiSprites/Radical/";
 
             case GameMode.Idiom:
+                return "KanjiSprites/Idiom/";
+
             case GameMode.Reading:
             default:
-                return "KanjiSprites/";
+                return "KanjiSprites/Reading/";
         }
     }
 }

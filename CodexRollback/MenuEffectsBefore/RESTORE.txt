@@ -1,0 +1,4 @@
+﻿Rollback snapshot for the menu/results effects accepted on 2026-10-23. These are plain text source backups taken immediately before implementation.
+To undo these changes, restore the corresponding .cs.txt file contents to the matching Assets/Scripts/.cs file, then delete the newly added effect scripts and their .meta files.
+This preserves edits already present in the workspace before this task.
+Restore phrase: 今回追加したタイトル・モード選択・説明・ゲームオーバーのエフェクトを元に戻して

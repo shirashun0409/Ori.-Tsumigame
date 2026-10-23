@@ -517,18 +517,6 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 174331782}
-        m_TargetAssemblyTypeName: ButtonSE, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
       - m_Target: {fileID: 759176742}
         m_TargetAssemblyTypeName: StartSceneManager, Assembly-CSharp
         m_MethodName: SlideLeft
@@ -2069,6 +2057,7 @@ MonoBehaviour:
   slideGuide: {fileID: 0}
   leftArrow: {fileID: 1640095269}
   rightArrow: {fileID: 827656144}
+  slideButtonSoundGroupIndex: 1
 --- !u!4 &759176743
 Transform:
   m_ObjectHideFlags: 0
@@ -4353,18 +4342,6 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1727579133}
-        m_TargetAssemblyTypeName: ButtonSE, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
       - m_Target: {fileID: 759176742}
         m_TargetAssemblyTypeName: StartSceneManager, Assembly-CSharp
         m_MethodName: SlideRight

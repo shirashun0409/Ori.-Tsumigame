@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.SceneManagement;
+using DG.Tweening;
 
 public class RankingDisplay : MonoBehaviour
 {
@@ -24,13 +25,24 @@ public class RankingDisplay : MonoBehaviour
 
     private void Start()
     {
+        Canvas canvas = FindObjectOfType<Canvas>(true);
+        if (canvas != null)
+        {
+            MenuSceneEffects.AttachButtonEffects(canvas.transform.root);
+            CanvasGroup canvasGroup = canvas.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+                canvasGroup = canvas.gameObject.AddComponent<CanvasGroup>();
+            canvasGroup.alpha = 0f;
+            canvasGroup.DOFade(1f, 0.4f);
+        }
+
         DisplayRanking();
         DisplayYourRank();
     }
 
     public void BackToGameOver()
     {
-        SceneManager.LoadScene("GameOverScene");
+        SceneTransitionEffect.LoadScene("GameOverScene");
     }
 
     public void DisplayRanking()

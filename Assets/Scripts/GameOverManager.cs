@@ -2,6 +2,7 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using DG.Tweening;
 
 public class GameOverManager : MonoBehaviour
 {
@@ -19,9 +20,21 @@ public class GameOverManager : MonoBehaviour
     private const string RegisteredKey = "LastRankingRegistered";
     private const string NicknameKey = "LastRankingNickname";
     private const string ScoreKey = "LastRankingScore";
+    private const string PersonalBestKey = "PersonalBestScore";
 
     private void Start()
     {
+        Canvas canvas = FindObjectOfType<Canvas>(true);
+        if (canvas != null)
+        {
+            MenuSceneEffects.AttachButtonEffects(canvas.transform.root);
+            CanvasGroup canvasGroup = canvas.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+                canvasGroup = canvas.gameObject.AddComponent<CanvasGroup>();
+            canvasGroup.alpha = 0f;
+            canvasGroup.DOFade(1f, MenuSceneEffects.ReducedMotion ? 0.12f : 0.45f).SetEase(Ease.OutQuad);
+        }
+
         // スコア表示
         if (scoreNumber == null)
         {
@@ -29,8 +42,33 @@ public class GameOverManager : MonoBehaviour
         }
         else
         {
-            scoreNumber.text =
-                GameManager.LastScore.ToString("N0");
+            int finalScore = GameManager.LastScore;
+            int previousBest = PlayerPrefs.GetInt(PersonalBestKey, 0);
+            bool isNewRecord = finalScore > previousBest;
+            if (isNewRecord)
+            {
+                PlayerPrefs.SetInt(PersonalBestKey, finalScore);
+                PlayerPrefs.Save();
+            }
+
+            scoreNumber.text = "0";
+            if (MenuSceneEffects.ReducedMotion)
+            {
+                scoreNumber.text = finalScore.ToString("N0");
+            }
+            else
+            {
+                scoreNumber.transform.localScale = Vector3.one * 0.88f;
+                DOTween.To(
+                    () => 0,
+                    value => scoreNumber.text = value.ToString("N0"),
+                    finalScore,
+                    0.9f).SetEase(Ease.OutCubic);
+                scoreNumber.transform.DOScale(1f, 0.55f).SetEase(Ease.OutBack).SetDelay(0.3f);
+            }
+
+            if (isNewRecord)
+                CelebrateNewRecord();
         }
 
         // 現在のゲームですでに登録済みか確認
@@ -74,21 +112,69 @@ public class GameOverManager : MonoBehaviour
 
     public void OpenRanking()
     {
-        SceneManager.LoadScene("RankingScene");
+        SceneTransitionEffect.LoadScene("RankingScene");
     }
 
 
     public void RetryGame()
     {
-        SceneManager.LoadScene("GameScene");
+        SceneTransitionEffect.LoadScene("GameScene");
     }
 
 
     public void BackToModeSelect()
     {
-        SceneManager.LoadScene("StartScene");
+        SceneTransitionEffect.LoadScene("StartScene");
     }
 
+
+    private void CelebrateNewRecord()
+    {
+        if (scoreNumber == null)
+            return;
+
+        Color originalColor = scoreNumber.color;
+        Color recordGold = new Color(0.88f, 0.72f, 0.40f, originalColor.a);
+        if (MenuSceneEffects.ReducedMotion)
+            scoreNumber.color = recordGold;
+        else
+        {
+            scoreNumber.DOColor(recordGold, 0.2f).SetDelay(0.45f);
+            scoreNumber.transform.DOPunchScale(Vector3.one * 0.16f, 0.5f, 4, 0.65f).SetDelay(0.4f);
+        }
+
+        RectTransform scoreRect = scoreNumber.rectTransform;
+        GameObject recordObject = new GameObject(
+            "NewRecordLabel",
+            typeof(RectTransform),
+            typeof(CanvasRenderer),
+            typeof(TextMeshProUGUI));
+        recordObject.transform.SetParent(scoreNumber.transform.parent, false);
+
+        RectTransform recordRect = recordObject.GetComponent<RectTransform>();
+        recordRect.anchorMin = scoreRect.anchorMin;
+        recordRect.anchorMax = scoreRect.anchorMax;
+        recordRect.pivot = scoreRect.pivot;
+        recordRect.anchoredPosition = scoreRect.anchoredPosition + Vector2.up * (scoreRect.rect.height * 0.75f);
+        recordRect.sizeDelta = new Vector2(scoreRect.sizeDelta.x, 48f);
+
+        TMP_Text recordText = recordObject.GetComponent<TextMeshProUGUI>();
+        recordText.font = scoreNumber.font;
+        recordText.fontSharedMaterial = scoreNumber.fontSharedMaterial;
+        recordText.fontSize = Mathf.Min(scoreNumber.fontSize * 0.55f, 42f);
+        recordText.alignment = TextAlignmentOptions.Center;
+        recordText.color = new Color(recordGold.r, recordGold.g, recordGold.b, MenuSceneEffects.ReducedMotion ? 1f : 0f);
+        recordText.text = "NEW RECORD!";
+        recordText.raycastTarget = false;
+        if (MenuSceneEffects.ReducedMotion)
+            recordText.transform.localScale = Vector3.one;
+        else
+        {
+            recordText.transform.localScale = Vector3.one * 0.7f;
+            recordText.DOFade(1f, 0.3f).SetDelay(0.5f);
+            recordText.transform.DOScale(1f, 0.4f).SetEase(Ease.OutBack).SetDelay(0.5f);
+        }
+    }
 
     private void RegisterRanking()
     {

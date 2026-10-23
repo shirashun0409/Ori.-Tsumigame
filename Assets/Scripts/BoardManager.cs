@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
 using TMPro;
+using UnityEngine.UI;
 
 public class BoardManager : MonoBehaviour
 {
@@ -13,6 +14,10 @@ public class BoardManager : MonoBehaviour
 
     [SerializeField] private GameObject cellPrefab;
     [SerializeField] private float cellSize = 1.0f;
+    private ParticleSystem clearBurstEffect;
+    private CapsulePart lastPlacedLeftPart;
+    private CapsulePart lastPlacedRightPart;
+    private int clearChainLevel = 1;
 
     public float CellSize => cellSize;
 
@@ -42,6 +47,18 @@ public class BoardManager : MonoBehaviour
         Instance = this;
 
         board = new CapsulePart[Width, Height];
+
+        // Scene内に置かれている演出用パーティクルを取得（初期状態は非表示）。
+        foreach (ParticleSystem candidate in Resources.FindObjectsOfTypeAll<ParticleSystem>())
+        {
+            if (candidate.gameObject.scene.IsValid() &&
+                candidate.gameObject.name == "JukugoBurstEffect")
+            {
+                clearBurstEffect = candidate;
+                ConfigureClearBurstEffect();
+                break;
+            }
+        }
     }
 
 
@@ -153,7 +170,6 @@ public class BoardManager : MonoBehaviour
         }
     }
 
-
     //==================================================
     // 座標変換
     //==================================================
@@ -202,6 +218,8 @@ public class BoardManager : MonoBehaviour
 
         board[leftX, leftY] = leftPart;
         board[rightX, rightY] = rightPart;
+        lastPlacedLeftPart = leftPart;
+        lastPlacedRightPart = rightPart;
 
         ScoreManager.Instance.ResetCombo();
         if (ScoreManager.Instance != null)
@@ -266,6 +284,8 @@ public class BoardManager : MonoBehaviour
 
         board[x, y] = null;
 
+        PlayClearBurstEffect(part.transform.position);
+
         part.transform
             .DOScale(0f, 0.15f)
             .SetEase(Ease.InBack);
@@ -278,6 +298,128 @@ public class BoardManager : MonoBehaviour
             part.gameObject,
             0.15f
         );
+    }
+
+    private void ConfigureClearBurstEffect()
+    {
+        if (clearBurstEffect == null)
+            return;
+
+        ParticleSystem.MainModule main = clearBurstEffect.main;
+        main.duration = 0.55f;
+        main.loop = false;
+        main.playOnAwake = false;
+        main.startLifetime = new ParticleSystem.MinMaxCurve(0.3f, 0.55f);
+        main.startSpeed = new ParticleSystem.MinMaxCurve(2.8f, 4.8f);
+        main.startSize = new ParticleSystem.MinMaxCurve(0.045f, 0.11f);
+        main.startColor = Color.white;
+        main.stopAction = ParticleSystemStopAction.Destroy;
+
+        ParticleSystem.ColorOverLifetimeModule colorOverLifetime = clearBurstEffect.colorOverLifetime;
+        colorOverLifetime.enabled = true;
+        Gradient fadeGradient = new Gradient();
+        fadeGradient.SetKeys(
+            new[]
+            {
+                new GradientColorKey(Color.white, 0f),
+                new GradientColorKey(Color.white, 1f)
+            },
+            new[]
+            {
+                new GradientAlphaKey(1f, 0f),
+                new GradientAlphaKey(0.9f, 0.55f),
+                new GradientAlphaKey(0f, 1f)
+            }
+        );
+        colorOverLifetime.color = new ParticleSystem.MinMaxGradient(fadeGradient);
+
+        ParticleSystem.EmissionModule emission = clearBurstEffect.emission;
+        emission.rateOverTime = 0f;
+
+        ParticleSystem.ShapeModule shape = clearBurstEffect.shape;
+        shape.shapeType = ParticleSystemShapeType.Sphere;
+        shape.radius = 0.035f;
+
+        ParticleSystemRenderer particleRenderer = clearBurstEffect.GetComponent<ParticleSystemRenderer>();
+        if (particleRenderer != null)
+        {
+            particleRenderer.sortingOrder = 5;
+            // 粒子シェーダーによっては ParticleSystem の色指定が反映されないため、
+            // Renderer のマテリアル側にも金色を設定する。
+            Material effectMaterial = particleRenderer.material;
+            Color foilGold = new Color(0.68f, 0.61f, 0.46f, 1f);
+            if (effectMaterial.HasProperty("_BaseColor"))
+                effectMaterial.SetColor("_BaseColor", foilGold);
+            if (effectMaterial.HasProperty("_Color"))
+                effectMaterial.SetColor("_Color", foilGold);
+        }
+    }
+
+    private void PlayClearBurstEffect(Vector3 position)
+    {
+        if (clearBurstEffect == null)
+            return;
+
+        // 同じフレームに複数マスを消す場合も各位置に表示できるよう、
+        // 漢字ごとに独立したParticleSystemを生成する。
+        ParticleSystem effect = Instantiate(
+            clearBurstEffect,
+            position,
+            Quaternion.identity
+        );
+        effect.gameObject.SetActive(true);
+        effect.Play(true);
+        ParticleSystem.MainModule main = effect.main;
+        float chainBonus = Mathf.Clamp(clearChainLevel - 1, 0, 5);
+        main.startSpeed = new ParticleSystem.MinMaxCurve(
+            2.8f + chainBonus * 0.3f,
+            4.8f + chainBonus * 0.55f
+        );
+        effect.Emit(22 + Mathf.RoundToInt(chainBonus * 4f));
+    }
+
+    private void HighlightMatchedParts(HashSet<Vector2Int> positions)
+    {
+        foreach (Vector2Int position in positions)
+        {
+            CapsulePart part = GetPart(position.x, position.y);
+            if (part == null)
+                continue;
+
+            SpriteRenderer spriteRenderer = part.GetComponent<SpriteRenderer>();
+            if (spriteRenderer == null)
+                continue;
+
+            Color originalColor = spriteRenderer.color;
+            Color highlightColor = new Color(1f, 0.91f, 0.62f, originalColor.a);
+            spriteRenderer.DOKill();
+            spriteRenderer.DOColor(highlightColor, 0.07f)
+                .SetLoops(2, LoopType.Yoyo);
+        }
+    }
+
+    public void PlayGameOverEffect()
+    {
+        if (lastPlacedLeftPart != null)
+            lastPlacedLeftPart.transform.DOShakePosition(0.45f, new Vector3(0.06f, 0.04f, 0f), 12, 90f);
+        if (lastPlacedRightPart != null)
+            lastPlacedRightPart.transform.DOShakePosition(0.45f, new Vector3(0.06f, 0.04f, 0f), 12, 90f);
+
+        GameObject overlayObject = new GameObject("GameOverDarkOverlay");
+        Canvas canvas = overlayObject.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 10000;
+
+        RectTransform rect = overlayObject.GetComponent<RectTransform>();
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+
+        Image overlay = overlayObject.AddComponent<Image>();
+        overlay.color = new Color(0f, 0f, 0f, 0f);
+        overlay.raycastTarget = false;
+        overlay.DOFade(0.68f, 0.55f).SetUpdate(true);
     }
 
 
@@ -424,6 +566,7 @@ public class BoardManager : MonoBehaviour
     private IEnumerator ChainCoroutine()
     {
         isChainProcessing = true;
+        int chainCount = 0;
 
         while (true)
         {
@@ -462,6 +605,9 @@ public class BoardManager : MonoBehaviour
             {
                 break;
             }
+
+            chainCount++;
+            clearChainLevel = chainCount;
 
 
             //==================================================
@@ -535,6 +681,9 @@ public class BoardManager : MonoBehaviour
 
                 if (idioms.Count == 0)
                     break;
+
+                HighlightMatchedParts(uniquePositions);
+                yield return new WaitForSeconds(0.14f);
 
 
                 //==================================================

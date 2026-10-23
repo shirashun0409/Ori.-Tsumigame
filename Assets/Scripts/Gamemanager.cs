@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
+using DG.Tweening;
 
 
 public class GameManager : MonoBehaviour
@@ -411,7 +412,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-
     //==================================================
     // ゲームモード
     //==================================================
@@ -480,7 +480,11 @@ public class GameManager : MonoBehaviour
         Debug.Log("GAME OVER");
         Debug.Log("最終スコア: " + LastScore);
 
-        SceneManager.LoadScene("GameOverScene");
+        if (BoardManager.Instance != null)
+            BoardManager.Instance.PlayGameOverEffect();
+
+        DOVirtual.DelayedCall(0.7f, () => SceneTransitionEffect.LoadScene("GameOverScene"))
+            .SetUpdate(true);
     }
     //==================================================
     // ゲームBGM
@@ -509,6 +513,18 @@ public class GameManager : MonoBehaviour
         bgmAudioSource.Play();
 
         StartCoroutine(FadeInBGM());
+    }
+
+    public void PauseGameBGM()
+    {
+        if (bgmAudioSource != null)
+            bgmAudioSource.Pause();
+    }
+
+    public void ResumeGameBGM()
+    {
+        if (bgmAudioSource != null && bgmAudioSource.clip == gameBGM)
+            bgmAudioSource.UnPause();
     }
 
     private System.Collections.IEnumerator FadeInBGM()

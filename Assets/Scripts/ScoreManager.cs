@@ -4,6 +4,8 @@ using DG.Tweening;
 
 public class ScoreManager : MonoBehaviour
 {
+    private const int HighScoreEffectThreshold = 500;
+
     public static ScoreManager Instance;
 
     [Header("UI")]
@@ -33,6 +35,8 @@ public class ScoreManager : MonoBehaviour
 
     private int score = 0;
     private int combo = 0;
+    private Color scoreTextOriginalColor = Color.white;
+    private Color comboTextOriginalColor = Color.white;
 
 
     //==================================================
@@ -48,6 +52,11 @@ public class ScoreManager : MonoBehaviour
         }
 
         Instance = this;
+
+        if (scoreText != null)
+            scoreTextOriginalColor = scoreText.color;
+        if (comboText != null)
+            comboTextOriginalColor = comboText.color;
 
         // 初期表示
         if (scoreText != null)
@@ -163,12 +172,13 @@ public class ScoreManager : MonoBehaviour
         // ⑦ スコア加算
         //==================================================
 
+        int previousScore = score;
         score += addScore;
 
         UpdateScoreUI();
         UpdateComboUI();
 
-        AnimateScore();
+        AnimateScore(addScore, previousScore, score);
 
         ShowScorePopup(addScore);
 
@@ -276,8 +286,23 @@ public class ScoreManager : MonoBehaviour
         if (comboText == null)
             return;
 
-        comboText.text =
-            combo + " Combo!";
+        comboText.text = combo + " Combo!";
+
+        comboText.DOKill();
+        comboText.transform.DOKill();
+
+        float chainStrength = Mathf.Clamp(combo - 1, 0, 5);
+        Color chainColor = Color.Lerp(
+            comboTextOriginalColor,
+            new Color(1f, 0.76f, 0.34f, comboTextOriginalColor.a),
+            Mathf.Clamp01(chainStrength / 4f));
+        comboText.color = chainColor;
+        comboText.transform.localScale = Vector3.one;
+        comboText.transform.DOPunchScale(
+            Vector3.one * (combo >= 2 ? 0.24f + chainStrength * 0.035f : 0.14f),
+            0.32f,
+            5,
+            0.7f);
     }
 
 
@@ -285,22 +310,46 @@ public class ScoreManager : MonoBehaviour
     // スコア・コンボ演出
     //==================================================
 
-    private void AnimateScore()
+    private void AnimateScore(int addScore, int previousScore, int currentScore)
     {
         if (scoreText != null)
         {
+            scoreText.DOKill();
             scoreText.transform
                 .DOKill();
+            scoreText.color = scoreTextOriginalColor;
+            scoreText.transform.localScale = Vector3.one;
+
+            if (addScore >= HighScoreEffectThreshold)
+            {
+                scoreText.text = previousScore.ToString("N0");
+                DOTween.To(
+                    () => previousScore,
+                    value => scoreText.text = value.ToString("N0"),
+                    currentScore,
+                    0.35f);
+            }
+            else
+            {
+                scoreText.text = currentScore.ToString("N0");
+            }
 
             scoreText.transform
-                .DOScale(
-                    1.3f,
-                    0.1f
-                )
-                .SetLoops(
-                    2,
-                    LoopType.Yoyo
+                .DOPunchScale(
+                    Vector3.one * (addScore >= HighScoreEffectThreshold ? 0.32f : 0.16f),
+                    0.28f,
+                    5,
+                    0.65f
                 );
+
+            if (addScore >= HighScoreEffectThreshold)
+            {
+                Color originalColor = scoreTextOriginalColor;
+                Color highlightColor = new Color(1f, 0.74f, 0.28f, originalColor.a);
+                Sequence colorPulse = DOTween.Sequence();
+                colorPulse.Append(scoreText.DOColor(highlightColor, 0.08f));
+                colorPulse.Append(scoreText.DOColor(originalColor, 0.35f));
+            }
         }
 
 
@@ -336,6 +385,10 @@ public class ScoreManager : MonoBehaviour
         if (comboText != null)
         {
             comboText.text = "";
+            comboText.DOKill();
+            comboText.transform.DOKill();
+            comboText.transform.localScale = Vector3.one;
+            comboText.color = comboTextOriginalColor;
         }
 
         Debug.Log("コンボリセット");

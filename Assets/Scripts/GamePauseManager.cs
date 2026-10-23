@@ -11,6 +11,7 @@ public class GamePauseManager : MonoBehaviour
     [SerializeField] private TMP_Text pauseText2;
 
     private bool isPaused = false;
+    private bool isPauseAllowed = false;
 
     public bool IsPaused => isPaused;
 
@@ -30,6 +31,7 @@ public class GamePauseManager : MonoBehaviour
     private void Start()
     {
         isPaused = false;
+        isPauseAllowed = false;
 
         if (pausePanel != null)
         {
@@ -50,6 +52,9 @@ public class GamePauseManager : MonoBehaviour
 
     public void TogglePause()
     {
+        if (!isPauseAllowed)
+            return;
+
         if (isPaused)
         {
             ResumeGame();
@@ -64,6 +69,9 @@ public class GamePauseManager : MonoBehaviour
     private void PauseGame()
     {
         isPaused = true;
+
+        if (GameManager.Instance != null)
+            GameManager.Instance.PauseGameBGM();
 
         if (pausePanel != null)
         {
@@ -84,9 +92,17 @@ public class GamePauseManager : MonoBehaviour
     }
 
 
+    public void SetPauseAllowed(bool allowed)
+    {
+        isPauseAllowed = allowed;
+    }
+
     private void ResumeGame()
     {
         isPaused = false;
+
+        if (GameManager.Instance != null)
+            GameManager.Instance.ResumeGameBGM();
 
         if (pausePanel != null)
         {

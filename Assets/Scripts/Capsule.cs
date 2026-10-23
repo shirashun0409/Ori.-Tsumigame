@@ -12,6 +12,7 @@ public class Capsule : MonoBehaviour
 
     private float fallTimer;
     private bool isLanded = false;
+    private bool currentCapsuleInitialized = false;
 
     private int gridX = 3;
     private int gridY = 0;
@@ -21,6 +22,8 @@ public class Capsule : MonoBehaviour
 
     private GameObject leftPart;
     private GameObject rightPart;
+    private GameObject leftLandingGhost;
+    private GameObject rightLandingGhost;
 
     private static readonly Vector2Int[] Directions =
     {
@@ -77,6 +80,9 @@ public class Capsule : MonoBehaviour
         }
 
         UpdatePosition();
+        CreateLandingGhosts();
+        UpdateLandingGhosts();
+        currentCapsuleInitialized = true;
     }
 
     private void Update()
@@ -89,10 +95,31 @@ public class Capsule : MonoBehaviour
 
         if (!isLanded && !isNextPreview)
         {
+            if (!currentCapsuleInitialized)
+                InitializePromotedCapsule();
+
             Move();
             Fall();
             Rotate();
+            UpdateLandingGhosts();
         }
+    }
+
+    private void InitializePromotedCapsule()
+    {
+        if (leftPart == null || rightPart == null)
+            CreateCapsule();
+
+        if (nextLeftKanji != null && nextRightKanji != null)
+        {
+            leftPart.GetComponent<CapsulePart>().SetKanji(nextLeftKanji);
+            rightPart.GetComponent<CapsulePart>().SetKanji(nextRightKanji);
+        }
+
+        UpdatePosition();
+        CreateLandingGhosts();
+        UpdateLandingGhosts();
+        currentCapsuleInitialized = true;
     }
 
     private void Move()
@@ -227,6 +254,7 @@ public class Capsule : MonoBehaviour
     {
         transform.localScale = Vector3.one;
         isLanded = true;
+        ClearLandingGhosts();
 
         Vector2Int dir = Directions[rotation];
 
@@ -265,6 +293,77 @@ public class Capsule : MonoBehaviour
     {
         GameManager.Instance.SpawnCapsule();
         Destroy(gameObject);
+    }
+
+    private void CreateLandingGhosts()
+    {
+        leftLandingGhost = CreateLandingGhost(leftPart);
+        rightLandingGhost = CreateLandingGhost(rightPart);
+    }
+
+    private GameObject CreateLandingGhost(GameObject sourceObject)
+    {
+        if (!GameModeData.ShadowEnabled)
+            return null;
+
+        if (sourceObject == null)
+            return null;
+
+        SpriteRenderer source = sourceObject.GetComponent<SpriteRenderer>();
+        if (source == null || source.sprite == null)
+            return null;
+
+        GameObject ghost = new GameObject("LandingGhost");
+        SpriteRenderer renderer = ghost.AddComponent<SpriteRenderer>();
+        renderer.sprite = source.sprite;
+        renderer.sharedMaterial = source.sharedMaterial;
+        renderer.sortingLayerID = source.sortingLayerID;
+        renderer.sortingOrder = source.sortingOrder + 1;
+        renderer.color = new Color(0.88f, 0.82f, 0.65f, 0.58f);
+        return ghost;
+    }
+
+    private void UpdateLandingGhosts()
+    {
+        if (isLanded || leftLandingGhost == null || rightLandingGhost == null)
+            return;
+
+        Vector2Int direction = Directions[rotation];
+        int ghostY = gridY;
+        int subX = gridX + direction.x;
+
+        while (true)
+        {
+            int subY = ghostY + direction.y;
+            bool baseCanFall = CanOccupy(gridX, ghostY + 1, subX, subY);
+            bool subCanFall = CanOccupy(subX, subY + 1, gridX, ghostY);
+            if (!baseCanFall || !subCanFall)
+                break;
+
+            ghostY++;
+        }
+
+        leftLandingGhost.transform.position = BoardManager.Instance.GridToWorld(gridX, ghostY);
+        rightLandingGhost.transform.position = BoardManager.Instance.GridToWorld(
+            subX,
+            ghostY + direction.y
+        );
+    }
+
+    private void ClearLandingGhosts()
+    {
+        if (leftLandingGhost != null)
+            Destroy(leftLandingGhost);
+        if (rightLandingGhost != null)
+            Destroy(rightLandingGhost);
+
+        leftLandingGhost = null;
+        rightLandingGhost = null;
+    }
+
+    private void OnDestroy()
+    {
+        ClearLandingGhosts();
     }
 
     public Sprite GetLeftSprite()

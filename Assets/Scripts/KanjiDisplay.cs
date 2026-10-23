@@ -50,4 +50,5 @@ public class KanjiDisplay : MonoBehaviour
             idiomText.fontSize = multipleFontSize;
         }
     }
+
 }
