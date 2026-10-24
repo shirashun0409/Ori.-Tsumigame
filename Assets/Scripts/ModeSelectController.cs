@@ -31,6 +31,15 @@ public class ModeSelectController : MonoBehaviour
         busyuButton.SetActive(true);
         yomiButton.SetActive(true);
 
+        // ボタン背景を不透明度100%にし、子ラベルとクリック判定を維持する。
+        Image radicalButtonImage = busyuButton.GetComponent<Image>();
+        if (radicalButtonImage != null)
+        {
+            Color imageColor = radicalButtonImage.color;
+            imageColor.a = 1f;
+            radicalButtonImage.color = imageColor;
+        }
+
         if (MenuSceneEffects.ReducedMotion)
         {
             jukugoButton.transform.localScale = Vector3.one;

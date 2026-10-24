@@ -55,12 +55,6 @@ public static class KanjiMatcher
             return false;
         }
 
-        // 同じ漢字同士は成立させない
-        if (first.kanji == second.kanji)
-        {
-            return false;
-        }
-
         // 部首が同じなら成立
         if (string.IsNullOrEmpty(first.radical))
         {

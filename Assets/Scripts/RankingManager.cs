@@ -18,7 +18,7 @@ public class RankingDataList
 
 public class RankingManager : MonoBehaviour
 {
-    private const string RankingKey = "KanjiRanking";
+    private const string LegacyRankingKey = "KanjiRanking";
 
     public void RegisterScore(string nickname, int score)
     {
@@ -80,7 +80,7 @@ public class RankingManager : MonoBehaviour
             JsonUtility.ToJson(data);
 
         PlayerPrefs.SetString(
-            RankingKey,
+            GameModeData.GetModeSpecificKey("KanjiRanking"),
             json
         );
 
@@ -93,13 +93,28 @@ public class RankingManager : MonoBehaviour
 
     private RankingDataList LoadRanking()
     {
-        if (!PlayerPrefs.HasKey(RankingKey))
+        string rankingKey =
+            GameModeData.GetModeSpecificKey("KanjiRanking");
+
+        if (!PlayerPrefs.HasKey(rankingKey))
         {
+            // 既存ランキングはモード情報を持たないため、旧来の標準である熟語モードへ引き継ぐ。
+            if (GameModeData.SelectedMode == GameMode.Idiom &&
+                PlayerPrefs.HasKey(LegacyRankingKey))
+            {
+                string legacyJson = PlayerPrefs.GetString(LegacyRankingKey);
+                RankingDataList legacyData =
+                    JsonUtility.FromJson<RankingDataList>(legacyJson);
+
+                if (legacyData != null)
+                    return legacyData;
+            }
+
             return new RankingDataList();
         }
 
         string json =
-            PlayerPrefs.GetString(RankingKey);
+            PlayerPrefs.GetString(rankingKey);
 
         RankingDataList data =
             JsonUtility.FromJson<RankingDataList>(

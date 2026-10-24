@@ -168,9 +168,12 @@ public class GameManager : MonoBehaviour
 
         RankingRegisteredThisGame = false;
 
-        PlayerPrefs.DeleteKey("LastRankingRegistered");
-        PlayerPrefs.DeleteKey("LastRankingNickname");
-        PlayerPrefs.DeleteKey("LastRankingScore");
+        PlayerPrefs.DeleteKey(
+            GameModeData.GetModeSpecificKey("LastRankingRegistered"));
+        PlayerPrefs.DeleteKey(
+            GameModeData.GetModeSpecificKey("LastRankingNickname"));
+        PlayerPrefs.DeleteKey(
+            GameModeData.GetModeSpecificKey("LastRankingScore"));
 
         PlayerPrefs.Save();
 

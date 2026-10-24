@@ -23,6 +23,11 @@ public class RankingDisplay : MonoBehaviour
     private const string NicknameKey = "LastRankingNickname";
     private const string ScoreKey = "LastRankingScore";
 
+    private string ModeKey(string key)
+    {
+        return GameModeData.GetModeSpecificKey(key);
+    }
+
     private void Start()
     {
         Canvas canvas = FindObjectOfType<Canvas>(true);
@@ -122,7 +127,7 @@ public class RankingDisplay : MonoBehaviour
         // 今回ニックネーム登録したか確認
         int registered =
             PlayerPrefs.GetInt(
-                RegisteredKey,
+                ModeKey(RegisteredKey),
                 0
             );
 
@@ -135,14 +140,14 @@ public class RankingDisplay : MonoBehaviour
         // ニックネーム取得
         string nickname =
             PlayerPrefs.GetString(
-                NicknameKey,
+                ModeKey(NicknameKey),
                 ""
             );
 
         // スコア取得
         int score =
             PlayerPrefs.GetInt(
-                ScoreKey,
+                ModeKey(ScoreKey),
                 0
             );
 

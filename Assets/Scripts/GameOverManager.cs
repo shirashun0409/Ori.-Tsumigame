@@ -22,6 +22,11 @@ public class GameOverManager : MonoBehaviour
     private const string ScoreKey = "LastRankingScore";
     private const string PersonalBestKey = "PersonalBestScore";
 
+    private string ModeKey(string key)
+    {
+        return GameModeData.GetModeSpecificKey(key);
+    }
+
     private void Start()
     {
         Canvas canvas = FindObjectOfType<Canvas>(true);
@@ -43,11 +48,20 @@ public class GameOverManager : MonoBehaviour
         else
         {
             int finalScore = GameManager.LastScore;
-            int previousBest = PlayerPrefs.GetInt(PersonalBestKey, 0);
+            string personalBestKey = ModeKey(PersonalBestKey);
+            int previousBest = PlayerPrefs.GetInt(personalBestKey, 0);
+
+            // 旧バージョンの共通記録は熟語モードの記録として引き継ぐ。
+            if (!PlayerPrefs.HasKey(personalBestKey) &&
+                GameModeData.SelectedMode == GameMode.Idiom)
+            {
+                previousBest = PlayerPrefs.GetInt(PersonalBestKey, 0);
+            }
+
             bool isNewRecord = finalScore > previousBest;
             if (isNewRecord)
             {
-                PlayerPrefs.SetInt(PersonalBestKey, finalScore);
+                PlayerPrefs.SetInt(personalBestKey, finalScore);
                 PlayerPrefs.Save();
             }
 
@@ -234,17 +248,17 @@ public class GameOverManager : MonoBehaviour
         //==================================================
 
         PlayerPrefs.SetInt(
-            RegisteredKey,
+            ModeKey(RegisteredKey),
             1
         );
 
         PlayerPrefs.SetString(
-            NicknameKey,
+            ModeKey(NicknameKey),
             nickname
         );
 
         PlayerPrefs.SetInt(
-            ScoreKey,
+            ModeKey(ScoreKey),
             score
         );
 

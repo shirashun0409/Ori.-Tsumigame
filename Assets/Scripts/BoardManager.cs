@@ -904,6 +904,10 @@ public class BoardManager : MonoBehaviour
                 if (uniquePositions.Count == 0)
                     break;
 
+                // 熟語モードと同じ消去前の強調演出を行う
+                HighlightMatchedParts(uniquePositions);
+                yield return new WaitForSeconds(0.14f);
+
 
                 //==================================================
                 // 部首モードでは
