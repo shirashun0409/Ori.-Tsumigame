@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using DG.Tweening;
 
 public class ShogiOpen3D : MonoBehaviour
@@ -22,6 +23,15 @@ public class ShogiOpen3D : MonoBehaviour
                 .DOScale(promptScale * 1.02f, 0.9f)
                 .SetEase(Ease.InOutSine)
                 .SetLoops(-1, LoopType.Yoyo);
+        }
+    }
+
+    private void Update()
+    {
+        if (Gamepad.current != null &&
+            Gamepad.current.buttonSouth.wasPressedThisFrame)
+        {
+            OpenShoji();
         }
     }
 

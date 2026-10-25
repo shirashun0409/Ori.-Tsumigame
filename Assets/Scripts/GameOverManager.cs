@@ -1,6 +1,8 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
+using System.Collections;
 using UnityEngine.SceneManagement;
 using DG.Tweening;
 
@@ -29,10 +31,12 @@ public class GameOverManager : MonoBehaviour
 
     private void Start()
     {
-        Canvas canvas = FindObjectOfType<Canvas>(true);
+        Canvas canvas = FindAnyObjectByType<Canvas>(FindObjectsInactive.Include);
         if (canvas != null)
         {
             MenuSceneEffects.AttachButtonEffects(canvas.transform.root);
+            SetNicknameNavigationMode();
+            StartCoroutine(ConfigureControllerNavigationAfterLayout(canvas));
             CanvasGroup canvasGroup = canvas.GetComponent<CanvasGroup>();
             if (canvasGroup == null)
                 canvasGroup = canvas.gameObject.AddComponent<CanvasGroup>();
@@ -123,6 +127,119 @@ public class GameOverManager : MonoBehaviour
         }
     }
 
+    private void SetNicknameNavigationMode()
+    {
+        if (nicknameInput != null)
+        {
+            Navigation navigation = nicknameInput.navigation;
+            navigation.mode = Navigation.Mode.None;
+            nicknameInput.navigation = navigation;
+        }
+
+        if (EventSystem.current != null &&
+            nicknameInput != null &&
+            EventSystem.current.currentSelectedGameObject == nicknameInput.gameObject)
+        {
+            Selectable fallback = rankingRegisterButton;
+            if (fallback == null || !fallback.IsActive() || !fallback.IsInteractable())
+            {
+                fallback = FindFirstNonNicknameSelectable();
+            }
+
+            if (fallback != null)
+                EventSystem.current.SetSelectedGameObject(fallback.gameObject);
+        }
+    }
+
+    private IEnumerator ConfigureControllerNavigationAfterLayout(Canvas canvas)
+    {
+        yield return null;
+
+        if (canvas == null)
+            yield break;
+
+        SetNicknameNavigationMode();
+        Selectable[] selectables = canvas.GetComponentsInChildren<Selectable>();
+        foreach (Selectable selectable in selectables)
+        {
+            if (selectable == null ||
+                selectable == nicknameInput ||
+                !selectable.IsActive() ||
+                !selectable.IsInteractable())
+            {
+                continue;
+            }
+
+            Navigation navigation = selectable.navigation;
+            navigation.mode = Navigation.Mode.Explicit;
+            navigation.selectOnUp = FindNearestSelectable(selectable, selectables, Vector2.up);
+            navigation.selectOnDown = FindNearestSelectable(selectable, selectables, Vector2.down);
+            navigation.selectOnLeft = FindNearestSelectable(selectable, selectables, Vector2.left);
+            navigation.selectOnRight = FindNearestSelectable(selectable, selectables, Vector2.right);
+            selectable.navigation = navigation;
+        }
+    }
+
+    private Selectable FindFirstNonNicknameSelectable()
+    {
+        if (nicknameInput == null)
+            return null;
+
+        Canvas canvas = nicknameInput.GetComponentInParent<Canvas>();
+        if (canvas == null)
+            return null;
+
+        Selectable[] selectables = canvas.GetComponentsInChildren<Selectable>();
+        foreach (Selectable selectable in selectables)
+        {
+            if (selectable != nicknameInput &&
+                selectable.IsActive() &&
+                selectable.IsInteractable())
+            {
+                return selectable;
+            }
+        }
+
+        return null;
+    }
+
+    private Selectable FindNearestSelectable(
+        Selectable source,
+        Selectable[] candidates,
+        Vector2 direction)
+    {
+        Selectable nearest = null;
+        float nearestScore = float.MaxValue;
+        Vector2 sourcePosition = source.transform.position;
+
+        foreach (Selectable candidate in candidates)
+        {
+            if (candidate == null ||
+                candidate == source ||
+                candidate == nicknameInput ||
+                !candidate.IsActive() ||
+                !candidate.IsInteractable())
+            {
+                continue;
+            }
+
+            Vector2 offset = (Vector2)candidate.transform.position - sourcePosition;
+            float distanceInDirection = Vector2.Dot(offset, direction);
+            if (distanceInDirection <= 0f)
+                continue;
+
+            float perpendicularDistance = Mathf.Abs(
+                offset.x * direction.y - offset.y * direction.x);
+            float score = distanceInDirection + perpendicularDistance * 2f;
+            if (score < nearestScore)
+            {
+                nearestScore = score;
+                nearest = candidate;
+            }
+        }
+
+        return nearest;
+    }
 
     public void OpenRanking()
     {

@@ -15,6 +15,7 @@ public class BoardManager : MonoBehaviour
     [SerializeField] private GameObject cellPrefab;
     [SerializeField] private float cellSize = 1.0f;
     private ParticleSystem clearBurstEffect;
+    private MaterialPropertyBlock clearEffectProperties;
     private CapsulePart lastPlacedLeftPart;
     private CapsulePart lastPlacedRightPart;
     private int clearChainLevel = 1;
@@ -45,6 +46,7 @@ public class BoardManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+        clearEffectProperties = new MaterialPropertyBlock();
 
         board = new CapsulePart[Width, Height];
 
@@ -345,7 +347,7 @@ public class BoardManager : MonoBehaviour
         {
             particleRenderer.sortingOrder = 5;
             // 粒子シェーダーによっては ParticleSystem の色指定が反映されないため、
-            // Renderer のマテリアル側にも金色を設定する。
+            // Renderer のマテリアル側にも基準色を設定する。
             Material effectMaterial = particleRenderer.material;
             Color foilGold = new Color(0.68f, 0.61f, 0.46f, 1f);
             if (effectMaterial.HasProperty("_BaseColor"))
@@ -368,6 +370,7 @@ public class BoardManager : MonoBehaviour
             Quaternion.identity
         );
         effect.gameObject.SetActive(true);
+        ApplyClearEffectColor(effect);
         effect.Play(true);
         ParticleSystem.MainModule main = effect.main;
         float chainBonus = Mathf.Clamp(clearChainLevel - 1, 0, 5);
@@ -376,6 +379,52 @@ public class BoardManager : MonoBehaviour
             4.8f + chainBonus * 0.55f
         );
         effect.Emit(22 + Mathf.RoundToInt(chainBonus * 4f));
+    }
+
+    private void ApplyClearEffectColor(ParticleSystem effect)
+    {
+        if (GameModeData.SelectedMode != GameMode.Idiom)
+        {
+            return;
+        }
+
+        Color modeColor = CapsulePart.GetModeAccentColor(GameModeData.SelectedMode);
+
+        ParticleSystem.MainModule main = effect.main;
+        main.startColor = modeColor;
+
+        Gradient fadeGradient = new Gradient();
+        fadeGradient.SetKeys(
+            new[]
+            {
+                new GradientColorKey(modeColor, 0f),
+                new GradientColorKey(modeColor, 1f)
+            },
+            new[]
+            {
+                new GradientAlphaKey(1f, 0f),
+                new GradientAlphaKey(0.9f, 0.55f),
+                new GradientAlphaKey(0f, 1f)
+            }
+        );
+        ParticleSystem.ColorOverLifetimeModule colorOverLifetime = effect.colorOverLifetime;
+        colorOverLifetime.enabled = true;
+        colorOverLifetime.color = new ParticleSystem.MinMaxGradient(fadeGradient);
+
+        ParticleSystemRenderer particleRenderer = effect.GetComponent<ParticleSystemRenderer>();
+        if (particleRenderer == null || particleRenderer.sharedMaterial == null)
+        {
+            return;
+        }
+
+        clearEffectProperties.Clear();
+        particleRenderer.GetPropertyBlock(clearEffectProperties);
+        Material material = particleRenderer.sharedMaterial;
+        if (material.HasProperty("_BaseColor"))
+            clearEffectProperties.SetColor("_BaseColor", modeColor);
+        if (material.HasProperty("_Color"))
+            clearEffectProperties.SetColor("_Color", modeColor);
+        particleRenderer.SetPropertyBlock(clearEffectProperties);
     }
 
     private void HighlightMatchedParts(HashSet<Vector2Int> positions)
@@ -391,7 +440,10 @@ public class BoardManager : MonoBehaviour
                 continue;
 
             Color originalColor = spriteRenderer.color;
-            Color highlightColor = new Color(1f, 0.91f, 0.62f, originalColor.a);
+            Color highlightColor = GameModeData.SelectedMode == GameMode.Idiom
+                ? Color.Lerp(CapsulePart.IdiomColor, Color.white, 0.28f)
+                : new Color(1f, 0.91f, 0.62f, originalColor.a);
+            highlightColor.a = originalColor.a;
             spriteRenderer.DOKill();
             spriteRenderer.DOColor(highlightColor, 0.07f)
                 .SetLoops(2, LoopType.Yoyo);
@@ -924,19 +976,48 @@ public class BoardManager : MonoBehaviour
                     MeaningText.text = "";
                 }
 
+                List<KanjiData> radicalDisplays = new List<KanjiData>();
+                List<KanjiData> clearedKanji = new List<KanjiData>();
+                HashSet<string> seenKanji = new HashSet<string>();
+                HashSet<string> seenRadicals = new HashSet<string>();
+                foreach (Vector2Int pos in uniquePositions)
+                {
+                    CapsulePart part = GetPart(pos.x, pos.y);
+                    KanjiData data = part != null
+                        ? part.GetKanjiData()
+                        : null;
+
+                    if (data != null &&
+                        !string.IsNullOrEmpty(data.radical))
+                    {
+                        if (seenKanji.Add(data.kanji))
+                        {
+                            clearedKanji.Add(data);
+                        }
+
+                        if (seenRadicals.Add(KanjiDatabase.GetRadicalDisplayKey(data)))
+                        {
+                            radicalDisplays.Add(data);
+                        }
+                    }
+                }
+
+                GameManager.Instance.OnRadicalsCleared(
+                    radicalDisplays,
+                    clearedKanji);
+
 
                 //==================================================
                 // 部首モードのスコア
                 //
-                // 漢字2個分の基本点だけ加算
-                // 熟語ボーナスは付けない
+                // 1字200点に、2組目以降の同時消しボーナスを加算
                 //==================================================
 
                 if (ScoreManager.Instance != null)
                 {
-                    ScoreManager.Instance.AddScore(
+                    ScoreManager.Instance.AddRadicalScore(
                         uniquePositions.Count,
-                        0
+                        matches.Count
                     );
                 }
 

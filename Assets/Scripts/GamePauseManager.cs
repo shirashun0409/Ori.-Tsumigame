@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using TMPro;
 
 public class GamePauseManager : MonoBehaviour
@@ -42,8 +43,12 @@ public class GamePauseManager : MonoBehaviour
 
     private void Update()
     {
-        // 上矢印キーで一時停止・再開
-        if (Input.GetKeyDown(KeyCode.UpArrow))
+        Gamepad gamepad = Gamepad.current;
+        bool pausePressed = Input.GetKeyDown(KeyCode.UpArrow) ||
+            (gamepad != null &&
+             (gamepad.startButton.wasPressedThisFrame ||
+              gamepad.buttonEast.wasPressedThisFrame));
+        if (pausePressed)
         {
             TogglePause();
         }

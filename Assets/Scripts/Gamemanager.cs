@@ -415,6 +415,44 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void OnRadicalsCleared(
+        List<KanjiData> radicals,
+        List<KanjiData> clearedKanji)
+    {
+        if (radicals == null || radicals.Count == 0)
+        {
+            return;
+        }
+
+        if (GameResultManager.Instance != null)
+        {
+            GameResultManager.Instance.AddRadicals(radicals);
+        }
+
+        if (kanjiDisplay != null)
+        {
+            kanjiDisplay.SetRadicals(radicals);
+        }
+
+        if (meaningDisplay != null)
+        {
+            List<string> explanations = new List<string>();
+            var excludedKanji = new HashSet<string>();
+            foreach (KanjiData data in clearedKanji)
+            {
+                excludedKanji.Add(data.kanji);
+            }
+
+            foreach (KanjiData radical in radicals)
+            {
+                explanations.Add(
+                    KanjiDatabase.GetRadicalExplanation(radical, excludedKanji));
+            }
+
+            meaningDisplay.SetMeaning(string.Join("\n\n", explanations));
+        }
+    }
+
     //==================================================
     // ゲームモード
     //==================================================

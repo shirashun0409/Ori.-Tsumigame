@@ -122,6 +122,14 @@ public class UIAudioManager : MonoBehaviour
         group.lastPlayedIndex = selectedIndex;
     }
 
+    public void PlaySound(AudioClip clip)
+    {
+        if (clip != null)
+        {
+            audioSource.PlayOneShot(clip);
+        }
+    }
+
     /// <summary>
     /// 前回と同じSEを避けてランダム選択
     /// </summary>

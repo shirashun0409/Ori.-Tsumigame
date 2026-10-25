@@ -5,6 +5,8 @@ using DG.Tweening;
 public class ScoreManager : MonoBehaviour
 {
     private const int HighScoreEffectThreshold = 500;
+    private const int RadicalKanjiScore = 200;
+    private const int RadicalSimultaneousBonus = 50;
 
     public static ScoreManager Instance;
 
@@ -95,6 +97,37 @@ public class ScoreManager : MonoBehaviour
         int kanjiCount,
         int jukugoCount)
     {
+        int simultaneousScore = jukugoCount >= 2
+            ? (jukugoCount - 1) * simultaneousBonus
+            : 0;
+
+        AddScoreInternal(
+            kanjiCount,
+            kanjiScore,
+            jukugoCount * jukugoBonus,
+            simultaneousScore);
+    }
+
+    public void AddRadicalScore(
+        int kanjiCount,
+        int pairCount)
+    {
+        int simultaneousScore = Mathf.Max(0, pairCount - 1)
+            * RadicalSimultaneousBonus;
+
+        AddScoreInternal(
+            kanjiCount,
+            RadicalKanjiScore,
+            0,
+            simultaneousScore);
+    }
+
+    private void AddScoreInternal(
+        int kanjiCount,
+        int scorePerKanji,
+        int jukugoScore,
+        int rensaScore)
+    {
         //==================================================
         // コンボを1つ増やす
         //
@@ -109,35 +142,7 @@ public class ScoreManager : MonoBehaviour
         // ① 基本点
         //==================================================
 
-        int baseScore =
-            kanjiCount * kanjiScore;
-
-
-        //==================================================
-        // ② 熟語ボーナス
-        //==================================================
-
-        int jukugoScore =
-            jukugoCount * jukugoBonus;
-
-
-        //==================================================
-        // ③ 同時消去ボーナス
-        //
-        // 1組だけならボーナスなし
-        //
-        // 2組 → +200
-        // 3組 → +400
-        // 4組 → +600
-        //==================================================
-
-        int rensaScore = 0;
-
-        if (jukugoCount >= 2)
-        {
-            rensaScore =
-                (jukugoCount - 1) * simultaneousBonus;
-        }
+        int baseScore = kanjiCount * scorePerKanji;
 
 
         //==================================================

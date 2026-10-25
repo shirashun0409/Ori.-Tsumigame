@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using DG.Tweening;
 using TMPro;
@@ -28,6 +30,7 @@ public class StartSceneManager : MonoBehaviour
 
     private int currentIndex = 0;
     private bool isMoving = false;
+    private int controllerSlideDirection;
     private static bool hasShownSlideHint = false;
 
     private void Start()
@@ -43,6 +46,49 @@ public class StartSceneManager : MonoBehaviour
             Debug.LogError(
                 "StartSceneManagerにModeSelectControllerが設定されていません！"
             );
+        }
+    }
+
+    private void Update()
+    {
+        if (explanationGroup == null || !explanationGroup.activeInHierarchy)
+        {
+            controllerSlideDirection = 0;
+            return;
+        }
+
+        Gamepad gamepad = Gamepad.current;
+        if (gamepad == null)
+        {
+            return;
+        }
+
+        float horizontal = gamepad.dpad.ReadValue().x;
+        if (Mathf.Abs(horizontal) < 0.5f)
+        {
+            horizontal = gamepad.leftStick.ReadValue().x;
+        }
+
+        int direction = horizontal > 0.55f ? 1 : horizontal < -0.55f ? -1 : 0;
+        if (direction == 0)
+        {
+            controllerSlideDirection = 0;
+        }
+        else if (direction != controllerSlideDirection)
+        {
+            if (direction > 0)
+                SlideRight();
+            else
+                SlideLeft();
+
+            controllerSlideDirection = direction;
+        }
+
+        if (gamepad.buttonSouth.wasPressedThisFrame &&
+            slides != null &&
+            currentIndex >= slides.Length - 1)
+        {
+            StartGame();
         }
     }
 
@@ -232,6 +278,8 @@ public class StartSceneManager : MonoBehaviour
             explanationCanvasGroup = explanationGroup.AddComponent<CanvasGroup>();
 
         explanationGroup.SetActive(true);
+        if (EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(null);
         explanationCanvasGroup.alpha = 0f;
         explanationCanvasGroup.interactable = true;
         explanationCanvasGroup.blocksRaycasts = true;

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public static class MenuSceneEffects
@@ -18,6 +19,21 @@ public static class MenuSceneEffects
         Toggle[] toggles = root.GetComponentsInChildren<Toggle>(true);
         foreach (Toggle toggle in toggles)
             Attach(toggle.gameObject);
+
+        EventSystem eventSystem = EventSystem.current;
+        if (eventSystem != null && eventSystem.currentSelectedGameObject == null)
+        {
+            Selectable[] selectables = root.GetComponentsInChildren<Selectable>();
+            foreach (Selectable selectable in selectables)
+            {
+                if (selectable.IsActive() && selectable.IsInteractable())
+                {
+                    eventSystem.SetSelectedGameObject(selectable.gameObject);
+                    break;
+                }
+            }
+        }
+
     }
 
     public static void AttachButtonEffect(GameObject target)

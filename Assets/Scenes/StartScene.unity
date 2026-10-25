@@ -2657,7 +2657,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d3bf74f632af90444b0a77e381f3bb65, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShowDevelopingMessage
-  buttonA: {fileID: 185888542}
   buttonB: {fileID: 409881596}
   devTMP: {fileID: 408981950}
 --- !u!1 &1224597434
@@ -3585,6 +3584,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSE
   soundGroupIndex: 0
+  soundOverride: {fileID: 8300000, guid: 4e3d01dda2a8c6345825734589840355, type: 3}
 --- !u!1 &1569937866
 GameObject:
   m_ObjectHideFlags: 0

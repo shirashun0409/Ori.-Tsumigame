@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using DG.Tweening;
 
 public class Capsule : MonoBehaviour
@@ -13,6 +14,12 @@ public class Capsule : MonoBehaviour
     private float fallTimer;
     private bool isLanded = false;
     private bool currentCapsuleInitialized = false;
+    private int horizontalInputDirection;
+    private float horizontalRepeatTimer;
+
+    private const float HorizontalInitialRepeatDelay = 0.24f;
+    private const float HorizontalRepeatInterval = 0.12f;
+    private const float StickDeadzone = 0.55f;
 
     private int gridX = 3;
     private int gridY = 0;
@@ -124,11 +131,40 @@ public class Capsule : MonoBehaviour
 
     private void Move()
     {
-        if (Input.GetKeyDown(KeyCode.LeftArrow))
-            TryMove(-1);
+        Gamepad gamepad = Gamepad.current;
+        float stickX = gamepad != null
+            ? gamepad.leftStick.ReadValue().x
+            : 0f;
 
-        if (Input.GetKeyDown(KeyCode.RightArrow))
-            TryMove(1);
+        bool leftHeld = Input.GetKey(KeyCode.LeftArrow) ||
+            (gamepad != null && (gamepad.dpad.left.isPressed || stickX < -StickDeadzone));
+        bool rightHeld = Input.GetKey(KeyCode.RightArrow) ||
+            (gamepad != null && (gamepad.dpad.right.isPressed || stickX > StickDeadzone));
+
+        int direction = leftHeld == rightHeld ? 0 : leftHeld ? -1 : 1;
+        if (direction == 0)
+        {
+            horizontalInputDirection = 0;
+            horizontalRepeatTimer = 0f;
+            return;
+        }
+
+        if (direction != horizontalInputDirection)
+        {
+            TryMove(direction);
+            horizontalRepeatTimer = HorizontalInitialRepeatDelay;
+        }
+        else
+        {
+            horizontalRepeatTimer -= Time.deltaTime;
+            if (horizontalRepeatTimer <= 0f)
+            {
+                TryMove(direction);
+                horizontalRepeatTimer = HorizontalRepeatInterval;
+            }
+        }
+
+        horizontalInputDirection = direction;
     }
 
     private void TryMove(int dx)
@@ -148,7 +184,12 @@ public class Capsule : MonoBehaviour
 
     private void Fall()
     {
-        float interval = Input.GetKey(KeyCode.DownArrow) ? fastFallInterval : fallInterval;
+        Gamepad gamepad = Gamepad.current;
+        bool fastFall = Input.GetKey(KeyCode.DownArrow) ||
+            (gamepad != null &&
+             (gamepad.dpad.down.isPressed ||
+              gamepad.leftStick.ReadValue().y < -StickDeadzone));
+        float interval = fastFall ? fastFallInterval : fallInterval;
 
         fallTimer += Time.deltaTime;
 
@@ -188,10 +229,13 @@ public class Capsule : MonoBehaviour
 
     private void Rotate()
     {
-        if (!Input.GetKeyDown(KeyCode.Space))
+        Gamepad gamepad = Gamepad.current;
+        bool rotatePressed = Input.GetKeyDown(KeyCode.Space) ||
+            (gamepad != null && gamepad.buttonSouth.wasPressedThisFrame);
+        if (!rotatePressed)
             return;
 
-        int newRotation = (rotation + 1) % 4;
+        int newRotation = (rotation + 1) % Directions.Length;
         Vector2Int dir = Directions[newRotation];
 
         if (BoardManager.Instance.IsOccupied(gridX + dir.x, gridY + dir.y))
@@ -320,7 +364,9 @@ public class Capsule : MonoBehaviour
         renderer.sharedMaterial = source.sharedMaterial;
         renderer.sortingLayerID = source.sortingLayerID;
         renderer.sortingOrder = source.sortingOrder + 1;
-        renderer.color = new Color(0.88f, 0.82f, 0.65f, 0.58f);
+        Color ghostColor = CapsulePart.GetModeAccentColor(GameModeData.SelectedMode);
+        ghostColor.a = 0.58f;
+        renderer.color = ghostColor;
         return ghost;
     }
 

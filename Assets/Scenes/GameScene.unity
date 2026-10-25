@@ -1688,6 +1688,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KanjiDisplay
   idiomText: {fileID: 851048671}
+  radicalNameText: {fileID: 1550426524}
   normalFontSize: 140
   doubleFontSize: 110
   multipleFontSize: 70

@@ -18,6 +18,11 @@ public class CountdownController : MonoBehaviour
         if (GamePauseManager.Instance != null)
             GamePauseManager.Instance.SetPauseAllowed(false);
 
+        if (GameModeData.SelectedMode == GameMode.Radical)
+        {
+            KanjiDatabase.PrepareRadicalGame();
+        }
+
         countdownText.gameObject.SetActive(true);
 
 
@@ -109,7 +114,6 @@ public class CountdownController : MonoBehaviour
 
         GameManager.Instance.StartGame();
     }
-
 
     //==================================================
     // 数字の演出

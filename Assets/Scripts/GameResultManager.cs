@@ -8,6 +8,7 @@ public class GameResultManager : MonoBehaviour
 
     // 今回のゲームで作った熟語
     private List<string> createdIdioms = new List<string>();
+    private List<KanjiData> clearedRadicals = new List<KanjiData>();
 
     private void Awake()
     {
@@ -48,11 +49,45 @@ public class GameResultManager : MonoBehaviour
         return new List<string>(createdIdioms);
     }
 
+    public void AddRadicals(List<KanjiData> radicals)
+    {
+        if (radicals == null)
+        {
+            return;
+        }
+
+        foreach (KanjiData radical in radicals)
+        {
+            if (radical == null)
+            {
+                continue;
+            }
+
+            string displayKey = KanjiDatabase.GetRadicalDisplayKey(radical);
+            bool alreadyRecorded = clearedRadicals.Exists(
+                recorded => KanjiDatabase.GetRadicalDisplayKey(recorded) == displayKey);
+            if (!alreadyRecorded)
+            {
+                clearedRadicals.Add(new KanjiData
+                {
+                    kanji = radical.kanji,
+                    radical = radical.radical
+                });
+            }
+        }
+    }
+
+    public List<KanjiData> GetClearedRadicals()
+    {
+        return new List<KanjiData>(clearedRadicals);
+    }
+
     /// <summary>
     /// ゲーム開始時に熟語記録をリセット
     /// </summary>
     public void ResetResult()
     {
         createdIdioms.Clear();
+        clearedRadicals.Clear();
     }
 }

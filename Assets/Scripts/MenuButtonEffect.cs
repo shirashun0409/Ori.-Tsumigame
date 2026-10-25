@@ -6,11 +6,14 @@ public class MenuButtonEffect : MonoBehaviour,
     IPointerEnterHandler,
     IPointerExitHandler,
     IPointerDownHandler,
-    IPointerUpHandler
+    IPointerUpHandler,
+    ISelectHandler,
+    IDeselectHandler
 {
     private RectTransform rectTransform;
     private Vector3 baseScale = Vector3.one;
     private bool isHovered;
+    private bool isSelected;
 
     public void Initialize(Vector3 originalScale)
     {
@@ -28,13 +31,13 @@ public class MenuButtonEffect : MonoBehaviour,
     public void OnPointerEnter(PointerEventData eventData)
     {
         isHovered = true;
-        AnimateTo(baseScale * (MenuSceneEffects.ReducedMotion ? 1f : 1.035f), 0.12f, Ease.OutQuad);
+        AnimateTo(HighlightedScale(), 0.12f, Ease.OutQuad);
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
         isHovered = false;
-        AnimateTo(baseScale, 0.14f, Ease.OutQuad);
+        AnimateTo(isSelected ? HighlightedScale() : baseScale, 0.14f, Ease.OutQuad);
     }
 
     public void OnPointerDown(PointerEventData eventData)
@@ -44,8 +47,25 @@ public class MenuButtonEffect : MonoBehaviour,
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        float scale = MenuSceneEffects.ReducedMotion ? 1f : (isHovered ? 1.045f : 1f);
-        AnimateTo(baseScale * scale, 0.18f, MenuSceneEffects.ReducedMotion ? Ease.OutQuad : Ease.OutBack);
+        float scale = isHovered || isSelected ? 1.045f : 1f;
+        AnimateTo(baseScale * scale, 0.18f, Ease.OutBack);
+    }
+
+    public void OnSelect(BaseEventData eventData)
+    {
+        isSelected = true;
+        AnimateTo(HighlightedScale(), 0.12f, Ease.OutQuad);
+    }
+
+    public void OnDeselect(BaseEventData eventData)
+    {
+        isSelected = false;
+        AnimateTo(isHovered ? HighlightedScale() : baseScale, 0.14f, Ease.OutQuad);
+    }
+
+    private Vector3 HighlightedScale()
+    {
+        return baseScale * (MenuSceneEffects.ReducedMotion ? 1f : 1.035f);
     }
 
     private void AnimateTo(Vector3 target, float duration, Ease ease)

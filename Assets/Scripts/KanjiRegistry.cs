@@ -20,7 +20,7 @@ public static class KanjiRegistry
             string meaning = "")
         {
             Kanji = kanji;
-            Radical = radical;
+            Radical = NormalizeRadical(radical);
             Readings = readings;
 
             IdiomPartners =
@@ -28,6 +28,11 @@ public static class KanjiRegistry
                 Array.Empty<string>();
 
             Meaning = meaning;
+        }
+
+        private static string NormalizeRadical(string radical)
+        {
+            return radical == "入" ? "人" : radical;
         }
     }
 
@@ -102,7 +107,7 @@ public static class KanjiRegistry
         ),
 
         new Entry(
-            "全", "入",
+            "全", "人",
             new[] { "ぜん", "まった" },
             new[] { "文", "員", "国", "体", "力", "面", "長", "部", "学" },
             "すべて"
@@ -305,7 +310,7 @@ public static class KanjiRegistry
         ),
 
         new Entry(
-            "内", "入",
+            "内", "人",
             new[] { "ない", "うち" },
             new[] { "外", "面", "心", "戦","国","定" },
             "うち"
@@ -443,7 +448,9 @@ public static class KanjiRegistry
         new Entry("茶", "艸", new[] { "ちゃ", "さ" }, new[] { "色", "道" }, "ちゃ"),
         new Entry("苦", "艸", new[] { "く", "くる", "にが" }, new[] { "心", "労" }, "くるしい"),
         new Entry("荷", "艸", new[] { "か", "に" }, new[] { "物", "車" }, "にもつ"),
+        new Entry("子", "子", new[] { "し", "こ" }, Array.Empty<string>(), "こども"),
         new Entry("字", "子", new[] { "じ", "あざ" }, new[] { "文", "数" }, "もじ"),
+        new Entry("孝", "子", new[] { "こう" }, Array.Empty<string>(), "親を大切にすること"),
         new Entry("家", "宀", new[] { "か", "け", "いえ" }, new[] { "族", "庭", "作" }, "いえ"),
         new Entry("室", "宀", new[] { "しつ", "むろ" }, new[] { "内", "教" }, "へや"),
         new Entry("安", "宀", new[] { "あん", "やす" }, new[] { "心", "全" }, "やすい"),
@@ -467,7 +474,11 @@ public static class KanjiRegistry
         new Entry("好", "女", new[] { "こう", "この", "す" }, new[] { "意", "物" }, "このむ"),
 
         // 追加した漢字
+        new Entry("田", "田", new[] { "でん", "た" }, Array.Empty<string>(), "たんぼ"),
         new Entry("男", "田", new[] { "だん", "なん", "おとこ" }, new[] { "女", "子", "人" }, "おとこ"),
+        new Entry("町", "田", new[] { "ちょう", "まち" }, Array.Empty<string>(), "人が集まって住むところ"),
+        new Entry("畑", "田", new[] { "はた", "はたけ" }, Array.Empty<string>(), "作物を育てる土地"),
+        new Entry("番", "田", new[] { "ばん", "つがい" }, Array.Empty<string>(), "順番・番号"),
         new Entry("助", "力", new[] { "じょ", "たす" }, new[] { "力", "手" }, "たすける"),
         new Entry("努", "力", new[] { "ど", "つと" }, new[] { "力", "学" }, "つとめる"),
         new Entry("勇", "力", new[] { "ゆう", "いさ" }, new[] { "気", "者" }, "いさましい"),
