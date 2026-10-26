@@ -17,6 +17,7 @@ public class GamePauseManager : MonoBehaviour
     private bool settingsStartedPause;
 
     public bool IsPaused => isPaused;
+    public bool IsPauseAllowed => isPauseAllowed;
 
 
     private void Awake()

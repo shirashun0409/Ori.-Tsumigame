@@ -137,8 +137,10 @@ public class Capsule : MonoBehaviour
             : 0f;
 
         bool leftHeld = Input.GetKey(KeyCode.LeftArrow) ||
+            MobileGameControls.IsHeld(MobileGameControls.Control.Left) ||
             (gamepad != null && (gamepad.dpad.left.isPressed || stickX < -StickDeadzone));
         bool rightHeld = Input.GetKey(KeyCode.RightArrow) ||
+            MobileGameControls.IsHeld(MobileGameControls.Control.Right) ||
             (gamepad != null && (gamepad.dpad.right.isPressed || stickX > StickDeadzone));
 
         int direction = leftHeld == rightHeld ? 0 : leftHeld ? -1 : 1;
@@ -186,6 +188,7 @@ public class Capsule : MonoBehaviour
     {
         Gamepad gamepad = Gamepad.current;
         bool fastFall = Input.GetKey(KeyCode.DownArrow) ||
+            MobileGameControls.IsHeld(MobileGameControls.Control.Drop) ||
             (gamepad != null &&
              (gamepad.dpad.down.isPressed ||
               gamepad.leftStick.ReadValue().y < -StickDeadzone));
@@ -231,6 +234,7 @@ public class Capsule : MonoBehaviour
     {
         Gamepad gamepad = Gamepad.current;
         bool rotatePressed = Input.GetKeyDown(KeyCode.Space) ||
+            MobileGameControls.RotatePressedThisFrame ||
             (gamepad != null && gamepad.buttonSouth.wasPressedThisFrame);
         if (!rotatePressed)
             return;

@@ -26,8 +26,11 @@ public class StartSceneManager : MonoBehaviour
 
     [SerializeField] private GameObject leftArrow;
     [SerializeField] private GameObject rightArrow;
+    [SerializeField] private int modeSelectionSoundGroupIndex = 0;
     [SerializeField] private int slideButtonSoundGroupIndex = 1;
 
+    private Button helpButton;
+    private TMP_Text helpButtonLabel;
     private int currentIndex = 0;
     private bool isMoving = false;
     private int controllerSlideDirection;
@@ -35,6 +38,8 @@ public class StartSceneManager : MonoBehaviour
 
     private void Start()
     {
+        SetupHelpButton();
+
         if (modeSelectController != null)
         {
             modeSelectController.ShowButtons();
@@ -46,6 +51,57 @@ public class StartSceneManager : MonoBehaviour
             Debug.LogError(
                 "StartSceneManagerにModeSelectControllerが設定されていません！"
             );
+        }
+    }
+
+    private void SetupHelpButton()
+    {
+        GameObject helpButtonObject = GameObject.Find("Helpbuttn");
+        if (helpButtonObject == null)
+        {
+            Debug.LogError("StartSceneManager: Helpbuttn was not found in the StartScene.", this);
+            return;
+        }
+
+        helpButton = helpButtonObject.GetComponent<Button>();
+        helpButtonLabel = helpButtonObject.GetComponentInChildren<TMP_Text>(true);
+        if (helpButton == null || helpButtonLabel == null)
+        {
+            Debug.LogError("StartSceneManager: Helpbuttn requires a Button and a child TMP_Text.", helpButtonObject);
+            return;
+        }
+
+        helpButton.onClick.AddListener(ToggleHelpMode);
+        UpdateHelpButtonLabel();
+        MenuSceneEffects.AttachButtonEffect(helpButtonObject);
+    }
+
+    private void ToggleHelpMode()
+    {
+        PlayModeSelectionSE();
+        GameModeData.ShadowEnabled = !GameModeData.ShadowEnabled;
+        UpdateHelpButtonLabel();
+    }
+
+    private void PlayModeSelectionSE()
+    {
+        if (UIAudioManager.Instance != null)
+        {
+            UIAudioManager.Instance.PlayButtonSE(modeSelectionSoundGroupIndex);
+        }
+        else
+        {
+            Debug.LogWarning("StartSceneManager: UIAudioManager was not found; mode selection sound was skipped.", this);
+        }
+    }
+
+    private void UpdateHelpButtonLabel()
+    {
+        if (helpButtonLabel != null)
+        {
+            helpButtonLabel.text = GameModeData.ShadowEnabled
+                ? "お助けモード：ON"
+                : "お助けモード：OFF";
         }
     }
 
@@ -97,6 +153,7 @@ public class StartSceneManager : MonoBehaviour
     //==================================================
     public void SelectJukugoMode()
     {
+        PlayModeSelectionSE();
         // 熟語モードを保存
         GameModeData.SelectedMode = GameMode.Idiom;
 
@@ -134,37 +191,9 @@ public class StartSceneManager : MonoBehaviour
     //==================================================
     public void SelectRadicalMode()
     {
-        // 部首モードを保存
+        PlayModeSelectionSE();
         GameModeData.SelectedMode = GameMode.Radical;
-
-        TransitionToExplanation();
-
-        currentIndex = 0;
-        isMoving = false;
-
-        // すべてのTweenを停止
-        for (int i = 0; i < slides.Length; i++)
-        {
-            slides[i].DOKill();
-
-            if (i == 0)
-            {
-                slides[i].anchoredPosition = Vector2.zero;
-            }
-            else
-            {
-                slides[i].anchoredPosition =
-                    new Vector2(slideDistance * i, 0f);
-            }
-        }
-
-        UpdatePageIndicator();
-
-        if (slideGuide != null)
-        {
-            slideGuide.gameObject.SetActive(true);
-        }
-        PlayFirstSlideHint();
+        StartGame();
     }
 
     //==================================================
@@ -268,6 +297,11 @@ public class StartSceneManager : MonoBehaviour
     {
         if (modeSelectGroup == null || explanationGroup == null)
             return;
+
+        if (helpButton != null)
+        {
+            helpButton.gameObject.SetActive(false);
+        }
 
         CanvasGroup modeGroup = modeSelectGroup.GetComponent<CanvasGroup>();
         if (modeGroup == null)

@@ -74,6 +74,12 @@ public class SettingsUIController : MonoBehaviour
 
     private void Update()
     {
+        GamePauseManager pauseManager = GamePauseManager.Instance;
+        if (pauseManager != null && !pauseManager.IsPauseAllowed)
+        {
+            return;
+        }
+
         bool togglePressed =
             (Keyboard.current != null && Keyboard.current.upArrowKey.wasPressedThisFrame) ||
             (Gamepad.current != null && Gamepad.current.buttonEast.wasPressedThisFrame);
