@@ -13,6 +13,8 @@ public class GamePauseManager : MonoBehaviour
 
     private bool isPaused = false;
     private bool isPauseAllowed = false;
+    private bool settingsOpen;
+    private bool settingsStartedPause;
 
     public bool IsPaused => isPaused;
 
@@ -26,6 +28,15 @@ public class GamePauseManager : MonoBehaviour
         }
 
         Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Time.timeScale = 1f;
+            Instance = null;
+        }
     }
 
 
@@ -44,10 +55,9 @@ public class GamePauseManager : MonoBehaviour
     private void Update()
     {
         Gamepad gamepad = Gamepad.current;
-        bool pausePressed = Input.GetKeyDown(KeyCode.UpArrow) ||
-            (gamepad != null &&
-             (gamepad.startButton.wasPressedThisFrame ||
-              gamepad.buttonEast.wasPressedThisFrame));
+        bool pausePressed =
+            (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) ||
+            (gamepad != null && gamepad.startButton.wasPressedThisFrame);
         if (pausePressed)
         {
             TogglePause();
@@ -57,7 +67,7 @@ public class GamePauseManager : MonoBehaviour
 
     public void TogglePause()
     {
-        if (!isPauseAllowed)
+        if (!isPauseAllowed || settingsOpen)
             return;
 
         if (isPaused)
@@ -71,16 +81,17 @@ public class GamePauseManager : MonoBehaviour
     }
 
 
-    private void PauseGame()
+    private void PauseGame(bool showPausePanel = true)
     {
         isPaused = true;
+        Time.timeScale = 0f;
 
         if (GameManager.Instance != null)
             GameManager.Instance.PauseGameBGM();
 
         if (pausePanel != null)
         {
-            pausePanel.SetActive(true);
+            pausePanel.SetActive(showPausePanel);
         }
 
         if (pauseText != null)
@@ -90,7 +101,7 @@ public class GamePauseManager : MonoBehaviour
 
         if (pauseText2 != null)
         {
-            pauseText2.text = "上キーで再開";
+            pauseText2.text = "Esc / STARTボタンで再開";
         }
 
         Debug.Log("ゲームを一時停止しました。");
@@ -102,9 +113,48 @@ public class GamePauseManager : MonoBehaviour
         isPauseAllowed = allowed;
     }
 
+    public void SetSettingsPaused(bool paused)
+    {
+        if (settingsOpen == paused)
+        {
+            return;
+        }
+
+        settingsOpen = paused;
+        if (paused)
+        {
+            if (pausePanel != null)
+            {
+                pausePanel.SetActive(false);
+            }
+
+            settingsStartedPause = isPauseAllowed && !isPaused;
+            if (settingsStartedPause)
+            {
+                PauseGame(showPausePanel: false);
+            }
+        }
+        else
+        {
+            if (settingsStartedPause)
+            {
+                settingsStartedPause = false;
+                if (isPaused)
+                {
+                    ResumeGame();
+                }
+            }
+            else if (isPaused && pausePanel != null)
+            {
+                pausePanel.SetActive(true);
+            }
+        }
+    }
+
     private void ResumeGame()
     {
         isPaused = false;
+        Time.timeScale = 1f;
 
         if (GameManager.Instance != null)
             GameManager.Instance.ResumeGameBGM();
@@ -117,4 +167,3 @@ public class GamePauseManager : MonoBehaviour
         Debug.Log("ゲームを再開しました。");
     }
 }
-

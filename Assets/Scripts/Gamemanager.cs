@@ -110,6 +110,19 @@ public class GameManager : MonoBehaviour
         bgmAudioSource.playOnAwake = false;
         bgmAudioSource.loop = true;
         bgmAudioSource.volume = 0f;
+        AudioVolumeSettings.RegisterBgmSource(bgmAudioSource, bgmVolume);
+        AudioVolumeSettings.SetBgmFade(bgmAudioSource, bgmVolume, 0f);
+        AudioVolumeSettings.RegisterSeSource(audioSource);
+    }
+
+    private void OnDestroy()
+    {
+        AudioVolumeSettings.UnregisterSource(audioSource);
+        AudioVolumeSettings.UnregisterSource(bgmAudioSource);
+        if (Instance == this)
+        {
+            Instance = null;
+        }
     }
 
     private void Start()
@@ -549,7 +562,7 @@ public class GameManager : MonoBehaviour
 
         bgmAudioSource.clip = gameBGM;
 
-        bgmAudioSource.volume = 0f;
+        AudioVolumeSettings.SetBgmFade(bgmAudioSource, bgmVolume, 0f);
 
         bgmAudioSource.Play();
 
@@ -579,17 +592,11 @@ public class GameManager : MonoBehaviour
             float progress =
                 timer / bgmFadeInDuration;
 
-            bgmAudioSource.volume =
-                Mathf.Lerp(
-                    0f,
-                    bgmVolume,
-                    progress
-                );
+            AudioVolumeSettings.SetBgmFade(bgmAudioSource, bgmVolume, progress);
 
             yield return null;
         }
 
-        bgmAudioSource.volume = bgmVolume;
+        AudioVolumeSettings.SetBgmFade(bgmAudioSource, bgmVolume, 1f);
     }
 }
-

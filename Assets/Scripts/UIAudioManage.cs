@@ -47,6 +47,16 @@ public class UIAudioManager : MonoBehaviour
 
         // 自動再生しない
         audioSource.playOnAwake = false;
+        AudioVolumeSettings.RegisterSeSource(audioSource);
+    }
+
+    private void OnDestroy()
+    {
+        AudioVolumeSettings.UnregisterSource(audioSource);
+        if (Instance == this)
+        {
+            Instance = null;
+        }
     }
 
     /// <summary>
