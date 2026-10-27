@@ -322,6 +322,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSE
   soundGroupIndex: 0
+  soundOverride: {fileID: 0}
 --- !u!1 &142867415
 GameObject:
   m_ObjectHideFlags: 0

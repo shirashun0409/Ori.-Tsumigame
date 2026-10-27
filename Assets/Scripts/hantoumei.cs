@@ -20,6 +20,9 @@ public class TapFadeUniversal : MonoBehaviour
         float a = (Mathf.Sin(Time.time * speed) + 1f) / 2f; // 0〜1
         float alpha = 0.5f + a * 0.5f; // 0.5〜1.0でゆっくり光る
 
+        if (MenuSceneEffects.ReducedMotion)
+            alpha = 1f;
+
         if (img != null)
         {
             Color c = img.color;

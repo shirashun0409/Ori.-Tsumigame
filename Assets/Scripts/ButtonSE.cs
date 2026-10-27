@@ -6,6 +6,8 @@ public class ButtonSE : MonoBehaviour
     [SerializeField]
     private int soundGroupIndex = 0;
 
+    [SerializeField] private AudioClip soundOverride;
+
     /// <summary>
     /// ボタンを押したときに呼び出す
     /// </summary>
@@ -17,6 +19,12 @@ public class ButtonSE : MonoBehaviour
                 "ButtonSE: UIAudioManagerが見つかりません。"
             );
 
+            return;
+        }
+
+        if (soundOverride != null)
+        {
+            UIAudioManager.Instance.PlaySound(soundOverride);
             return;
         }
 

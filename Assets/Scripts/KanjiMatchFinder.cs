@@ -19,8 +19,17 @@ public class IdiomMatch
 public static class KanjiMatchFinder
 {
     /// <summary>
-    /// 熟語モードで成立する
-    /// すべての隣接二字熟語を探します。
+    /// 現在のゲームモードに応じて、
+    /// 成立する隣接する2つの漢字を探します。
+    ///
+    /// 熟語モード：
+    /// 実際に存在する二字熟語を探す
+    ///
+    /// 部首モード：
+    /// 同じ部首の漢字2個を探す
+    ///
+    /// 読みモード：
+    /// 現在は未実装
     ///
     /// 横方向：左 → 右
     /// 縦方向：上 → 下
@@ -33,6 +42,18 @@ public static class KanjiMatchFinder
 
         BoardManager board =
             BoardManager.Instance;
+
+        //======================================
+        // 現在のゲームモードを取得
+        //======================================
+
+        GameManager gameManager =
+            GameManager.Instance;
+
+        if (gameManager == null)
+        {
+            return matches;
+        }
 
 
         for (int y = 0;
@@ -68,7 +89,8 @@ public static class KanjiMatchFinder
                         y,
                         x + 1,
                         y,
-                        matches
+                        matches,
+                        gameManager
                     );
                 }
 
@@ -84,7 +106,8 @@ public static class KanjiMatchFinder
                         y,
                         x,
                         y + 1,
-                        matches
+                        matches,
+                        gameManager
                     );
                 }
             }
@@ -100,7 +123,8 @@ public static class KanjiMatchFinder
         int y1,
         int x2,
         int y2,
-        List<IdiomMatch> matches)
+        List<IdiomMatch> matches,
+        GameManager gameManager)
     {
         BoardManager board =
             BoardManager.Instance;
@@ -134,17 +158,59 @@ public static class KanjiMatchFinder
         }
 
 
-        // first → second の順番のみ判定
-        if (KanjiMatcher.IsIdiomMatch(
-            firstKanji,
-            secondKanji))
+        //======================================
+        // 熟語モード
+        //======================================
+
+        if (gameManager.IsIdiomMode())
         {
-            matches.Add(
-                new IdiomMatch(
-                    new Vector2Int(x1, y1),
-                    new Vector2Int(x2, y2)
-                )
-            );
+            // first → second の順番のみ判定
+            if (KanjiMatcher.IsIdiomMatch(
+                firstKanji,
+                secondKanji))
+            {
+                matches.Add(
+                    new IdiomMatch(
+                        new Vector2Int(x1, y1),
+                        new Vector2Int(x2, y2)
+                    )
+                );
+            }
+
+            return;
+        }
+
+
+        //======================================
+        // 部首モード
+        //======================================
+
+        if (gameManager.IsRadicalMode())
+        {
+            if (KanjiMatcher.IsRadicalMatch(
+                firstKanji,
+                secondKanji))
+            {
+                matches.Add(
+                    new IdiomMatch(
+                        new Vector2Int(x1, y1),
+                        new Vector2Int(x2, y2)
+                    )
+                );
+            }
+
+            return;
+        }
+
+
+        //======================================
+        // 読みモード
+        //======================================
+
+        if (gameManager.IsReadingMode())
+        {
+            // 読みモードはまだ未実装
+            return;
         }
     }
 }

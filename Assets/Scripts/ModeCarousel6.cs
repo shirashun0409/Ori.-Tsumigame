@@ -11,6 +11,7 @@ public class ModeCarousel6 : MonoBehaviour
     [SerializeField] private float rotateDuration = 0.45f;
 
     private bool isRotating = false;
+    private int currentPanelIndex = 0;
 
 
     //==================================================
@@ -20,6 +21,10 @@ public class ModeCarousel6 : MonoBehaviour
     private void Start()
     {
         ArrangePanels();
+
+        Canvas canvas = FindObjectOfType<Canvas>(true);
+        if (canvas != null)
+            MenuSceneEffects.AttachButtonEffects(canvas.transform.root);
     }
 
 
@@ -29,9 +34,10 @@ public class ModeCarousel6 : MonoBehaviour
 
     public void RotateLeft()
     {
-        if (isRotating)
+        if (isRotating || transform.childCount == 0)
             return;
 
+        currentPanelIndex = (currentPanelIndex - 1 + transform.childCount) % transform.childCount;
         RotateCylinder(rotateAngle);
     }
 
@@ -42,9 +48,10 @@ public class ModeCarousel6 : MonoBehaviour
 
     public void RotateRight()
     {
-        if (isRotating)
+        if (isRotating || transform.childCount == 0)
             return;
 
+        currentPanelIndex = (currentPanelIndex + 1) % transform.childCount;
         RotateCylinder(-rotateAngle);
     }
 
@@ -60,7 +67,7 @@ public class ModeCarousel6 : MonoBehaviour
         transform.DOLocalRotate(
             transform.localEulerAngles +
             new Vector3(0f, angle, 0f),
-            rotateDuration
+            MenuSceneEffects.ReducedMotion ? 0.12f : rotateDuration
         )
         .SetEase(Ease.InOutCubic)
         .OnComplete(() =>

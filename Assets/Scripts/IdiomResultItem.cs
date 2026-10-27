@@ -4,7 +4,9 @@ using TMPro;
 
 public class IdiomResultItem : MonoBehaviour,
     IPointerEnterHandler,
-    IPointerExitHandler
+    IPointerExitHandler,
+    ISelectHandler,
+    IDeselectHandler
 {
     [Header("熟語")]
     [SerializeField] private TMP_Text idiomText;
@@ -18,6 +20,10 @@ public class IdiomResultItem : MonoBehaviour,
     [SerializeField] private Vector2 popupOffset = new Vector2(20f, 0f);
 
     private string idiom;
+    private KanjiData radical;
+    private Vector2 infoTextOriginalPosition;
+    private float infoTextOriginalFontSize;
+    private bool infoTextLayoutCaptured;
 
     public void SetInfoPanel(
         GameObject panel,
@@ -27,11 +33,24 @@ public class IdiomResultItem : MonoBehaviour,
         infoPanel = panel;
         infoTitle = title;
         infoText = text;
+
+        if (infoTitle != null)
+            infoTitle.raycastTarget = false;
+        if (infoText != null)
+            infoText.raycastTarget = false;
+
+        if (infoText != null && !infoTextLayoutCaptured)
+        {
+            infoTextOriginalPosition = infoText.rectTransform.anchoredPosition;
+            infoTextOriginalFontSize = infoText.fontSize;
+            infoTextLayoutCaptured = true;
+        }
     }
 
     public void SetIdiom(string value)
     {
         idiom = value;
+        radical = null;
 
         if (idiomText != null)
         {
@@ -39,9 +58,30 @@ public class IdiomResultItem : MonoBehaviour,
         }
     }
 
+    public void SetRadical(KanjiData value)
+    {
+        radical = value;
+        idiom = null;
+
+        if (idiomText != null)
+        {
+            idiomText.text = KanjiDatabase.GetRadicalSymbol(value);
+        }
+    }
+
     // マウスが熟語ボタンに入ったとき
     public void OnPointerEnter(
         PointerEventData eventData)
+    {
+        ShowInfo();
+    }
+
+    public void OnSelect(BaseEventData eventData)
+    {
+        ShowInfo();
+    }
+
+    private void ShowInfo()
     {
         if (infoPanel == null)
             return;
@@ -50,11 +90,18 @@ public class IdiomResultItem : MonoBehaviour,
         // 読み・意味を取得
         //========================================
 
-        string reading =
-            IdiomDictionary.GetReading(idiom);
-
-        string meaning =
-            IdiomDictionary.GetMeaning(idiom);
+        string reading;
+        string meaning;
+        if (radical != null)
+        {
+            reading = KanjiDatabase.GetRadicalName(radical);
+            meaning = "この部首の漢字：" + KanjiDatabase.GetRadicalKanji(radical);
+        }
+        else
+        {
+            reading = IdiomDictionary.GetReading(idiom);
+            meaning = IdiomDictionary.GetMeaning(idiom);
+        }
 
         //========================================
         // 説明内容を設定
@@ -62,15 +109,22 @@ public class IdiomResultItem : MonoBehaviour,
 
         if (infoTitle != null)
         {
-            infoTitle.text = idiom;
+            infoTitle.gameObject.SetActive(radical == null);
+            if (radical == null)
+            {
+                infoTitle.text = idiom;
+            }
         }
 
         if (infoText != null)
         {
-            infoText.text =
-                "読み：" + reading
-                + "\n"
-                + "意味：" + meaning;
+            infoText.fontSize = infoTextOriginalFontSize;
+            infoText.rectTransform.anchoredPosition = radical != null
+                ? infoTextOriginalPosition + Vector2.up * 90f
+                : infoTextOriginalPosition;
+            infoText.text = radical != null
+                ? "<voffset=-30><size=135%>読み：" + reading + "</size></voffset>\n\n<size=100%>" + meaning + "</size>"
+                : "読み：" + reading + "\n意味：" + meaning;
         }
 
         //========================================
@@ -125,9 +179,17 @@ public class IdiomResultItem : MonoBehaviour,
     public void OnPointerExit(
         PointerEventData eventData)
     {
+        HideInfo();
+    }
+
+    public void OnDeselect(BaseEventData eventData)
+    {
+        HideInfo();
+    }
+
+    private void HideInfo()
+    {
         if (infoPanel != null)
-        {
             infoPanel.SetActive(false);
-        }
     }
 }

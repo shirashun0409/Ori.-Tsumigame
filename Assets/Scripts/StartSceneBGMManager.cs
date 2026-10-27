@@ -28,8 +28,14 @@ public class StartSceneBGMManager : MonoBehaviour
 
         // 最初は無音
         audioSource.volume = 0f;
+        AudioVolumeSettings.RegisterBgmSource(audioSource, volume);
+        AudioVolumeSettings.SetBgmFade(audioSource, volume, 0f);
     }
 
+    private void OnDestroy()
+    {
+        AudioVolumeSettings.UnregisterSource(audioSource);
+    }
 
     private void Start()
     {
@@ -64,17 +70,12 @@ public class StartSceneBGMManager : MonoBehaviour
             float progress =
                 timer / fadeInDuration;
 
-            audioSource.volume =
-                Mathf.Lerp(
-                    0f,
-                    volume,
-                    progress
-                );
+            AudioVolumeSettings.SetBgmFade(audioSource, volume, progress);
 
             yield return null;
         }
 
         // 最後は確実に設定音量にする
-        audioSource.volume = volume;
+        AudioVolumeSettings.SetBgmFade(audioSource, volume, 1f);
     }
 }

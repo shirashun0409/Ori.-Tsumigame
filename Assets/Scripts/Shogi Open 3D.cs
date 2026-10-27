@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using UnityEngine.InputSystem;
 using DG.Tweening;
 
 public class ShogiOpen3D : MonoBehaviour
@@ -14,11 +14,32 @@ public class ShogiOpen3D : MonoBehaviour
 
     private bool isOpened = false; // ← 追加：一度だけ実行するためのフラグ
 
+    private void Start()
+    {
+        if (pressToStart != null && !MenuSceneEffects.ReducedMotion)
+        {
+            Vector3 promptScale = pressToStart.transform.localScale;
+            pressToStart.transform
+                .DOScale(promptScale * 1.02f, 0.9f)
+                .SetEase(Ease.InOutSine)
+                .SetLoops(-1, LoopType.Yoyo);
+        }
+    }
+
+    private void Update()
+    {
+        if (Gamepad.current != null &&
+            Gamepad.current.buttonSouth.wasPressedThisFrame)
+        {
+            OpenShoji();
+        }
+    }
+
     public void CameraZoom()
     {
         mainCamera.transform.DOMoveZ(
             mainCamera.transform.position.z + 3f,
-            1f
+            MenuSceneEffects.ReducedMotion ? 0.2f : 1f
         ).SetEase(Ease.InOutQuad);
     }
 
@@ -26,6 +47,7 @@ public class ShogiOpen3D : MonoBehaviour
     {
         if (isOpened) return; // ← 追加：2回目以降は無視
         isOpened = true;      // ← 追加：一度実行したらロック
+        float openingDuration = MenuSceneEffects.ReducedMotion ? 0.2f : 1f;
 
         // ① ロゴを消す
         logoGroup.SetActive(false);
@@ -36,7 +58,7 @@ public class ShogiOpen3D : MonoBehaviour
         // ③ カメラを前にズーム
         mainCamera.transform.DOMoveZ(
             mainCamera.transform.position.z + 3f,
-            1f
+            openingDuration
         ).SetEase(Ease.InOutQuad);
 
         // ④ 障子を開く
@@ -45,21 +67,21 @@ public class ShogiOpen3D : MonoBehaviour
         sequence.Join(
             leftShoji.DOMoveX(
                 leftShoji.position.x - 12f,
-                1f
+                openingDuration
             ).SetEase(Ease.InOutQuad)
         );
 
         sequence.Join(
             rightShoji.DOMoveX(
                 rightShoji.position.x + 12f,
-                1f
+                openingDuration
             ).SetEase(Ease.InOutQuad)
         );
 
         // ⑤ 障子が開き終わったらStartSceneへ
         sequence.OnComplete(() =>
         {
-            SceneManager.LoadScene("StartScene");
+            SceneTransitionEffect.LoadScene("StartScene");
         });
     }
 }

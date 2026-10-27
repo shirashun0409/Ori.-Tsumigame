@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using DG.Tweening;
 
 public class Capsule : MonoBehaviour
@@ -12,6 +13,13 @@ public class Capsule : MonoBehaviour
 
     private float fallTimer;
     private bool isLanded = false;
+    private bool currentCapsuleInitialized = false;
+    private int horizontalInputDirection;
+    private float horizontalRepeatTimer;
+
+    private const float HorizontalInitialRepeatDelay = 0.24f;
+    private const float HorizontalRepeatInterval = 0.12f;
+    private const float StickDeadzone = 0.55f;
 
     private int gridX = 3;
     private int gridY = 0;
@@ -21,6 +29,8 @@ public class Capsule : MonoBehaviour
 
     private GameObject leftPart;
     private GameObject rightPart;
+    private GameObject leftLandingGhost;
+    private GameObject rightLandingGhost;
 
     private static readonly Vector2Int[] Directions =
     {
@@ -77,6 +87,9 @@ public class Capsule : MonoBehaviour
         }
 
         UpdatePosition();
+        CreateLandingGhosts();
+        UpdateLandingGhosts();
+        currentCapsuleInitialized = true;
     }
 
     private void Update()
@@ -89,19 +102,71 @@ public class Capsule : MonoBehaviour
 
         if (!isLanded && !isNextPreview)
         {
+            if (!currentCapsuleInitialized)
+                InitializePromotedCapsule();
+
             Move();
             Fall();
             Rotate();
+            UpdateLandingGhosts();
         }
+    }
+
+    private void InitializePromotedCapsule()
+    {
+        if (leftPart == null || rightPart == null)
+            CreateCapsule();
+
+        if (nextLeftKanji != null && nextRightKanji != null)
+        {
+            leftPart.GetComponent<CapsulePart>().SetKanji(nextLeftKanji);
+            rightPart.GetComponent<CapsulePart>().SetKanji(nextRightKanji);
+        }
+
+        UpdatePosition();
+        CreateLandingGhosts();
+        UpdateLandingGhosts();
+        currentCapsuleInitialized = true;
     }
 
     private void Move()
     {
-        if (Input.GetKeyDown(KeyCode.LeftArrow))
-            TryMove(-1);
+        Gamepad gamepad = Gamepad.current;
+        float stickX = gamepad != null
+            ? gamepad.leftStick.ReadValue().x
+            : 0f;
 
-        if (Input.GetKeyDown(KeyCode.RightArrow))
-            TryMove(1);
+        bool leftHeld = Input.GetKey(KeyCode.LeftArrow) ||
+            MobileGameControls.IsHeld(MobileGameControls.Control.Left) ||
+            (gamepad != null && (gamepad.dpad.left.isPressed || stickX < -StickDeadzone));
+        bool rightHeld = Input.GetKey(KeyCode.RightArrow) ||
+            MobileGameControls.IsHeld(MobileGameControls.Control.Right) ||
+            (gamepad != null && (gamepad.dpad.right.isPressed || stickX > StickDeadzone));
+
+        int direction = leftHeld == rightHeld ? 0 : leftHeld ? -1 : 1;
+        if (direction == 0)
+        {
+            horizontalInputDirection = 0;
+            horizontalRepeatTimer = 0f;
+            return;
+        }
+
+        if (direction != horizontalInputDirection)
+        {
+            TryMove(direction);
+            horizontalRepeatTimer = HorizontalInitialRepeatDelay;
+        }
+        else
+        {
+            horizontalRepeatTimer -= Time.deltaTime;
+            if (horizontalRepeatTimer <= 0f)
+            {
+                TryMove(direction);
+                horizontalRepeatTimer = HorizontalRepeatInterval;
+            }
+        }
+
+        horizontalInputDirection = direction;
     }
 
     private void TryMove(int dx)
@@ -121,7 +186,13 @@ public class Capsule : MonoBehaviour
 
     private void Fall()
     {
-        float interval = Input.GetKey(KeyCode.DownArrow) ? fastFallInterval : fallInterval;
+        Gamepad gamepad = Gamepad.current;
+        bool fastFall = Input.GetKey(KeyCode.DownArrow) ||
+            MobileGameControls.IsHeld(MobileGameControls.Control.Drop) ||
+            (gamepad != null &&
+             (gamepad.dpad.down.isPressed ||
+              gamepad.leftStick.ReadValue().y < -StickDeadzone));
+        float interval = fastFall ? fastFallInterval : fallInterval;
 
         fallTimer += Time.deltaTime;
 
@@ -161,10 +232,14 @@ public class Capsule : MonoBehaviour
 
     private void Rotate()
     {
-        if (!Input.GetKeyDown(KeyCode.Space))
+        Gamepad gamepad = Gamepad.current;
+        bool rotatePressed = Input.GetKeyDown(KeyCode.Space) ||
+            MobileGameControls.RotatePressedThisFrame ||
+            (gamepad != null && gamepad.buttonSouth.wasPressedThisFrame);
+        if (!rotatePressed)
             return;
 
-        int newRotation = (rotation + 1) % 4;
+        int newRotation = (rotation + 1) % Directions.Length;
         Vector2Int dir = Directions[newRotation];
 
         if (BoardManager.Instance.IsOccupied(gridX + dir.x, gridY + dir.y))
@@ -227,6 +302,7 @@ public class Capsule : MonoBehaviour
     {
         transform.localScale = Vector3.one;
         isLanded = true;
+        ClearLandingGhosts();
 
         Vector2Int dir = Directions[rotation];
 
@@ -240,7 +316,8 @@ public class Capsule : MonoBehaviour
 
         GameManager.Instance.PlaySE(GameManager.Instance.dropSE);
 
-        if (GameManager.Instance.IsIdiomMode())
+        if (GameManager.Instance.IsIdiomMode() ||
+            GameManager.Instance.IsRadicalMode())
         {
             BoardManager.Instance.StartChain();
             StartCoroutine(WaitForChainAndSpawn());
@@ -265,6 +342,79 @@ public class Capsule : MonoBehaviour
     {
         GameManager.Instance.SpawnCapsule();
         Destroy(gameObject);
+    }
+
+    private void CreateLandingGhosts()
+    {
+        leftLandingGhost = CreateLandingGhost(leftPart);
+        rightLandingGhost = CreateLandingGhost(rightPart);
+    }
+
+    private GameObject CreateLandingGhost(GameObject sourceObject)
+    {
+        if (!GameModeData.ShadowEnabled)
+            return null;
+
+        if (sourceObject == null)
+            return null;
+
+        SpriteRenderer source = sourceObject.GetComponent<SpriteRenderer>();
+        if (source == null || source.sprite == null)
+            return null;
+
+        GameObject ghost = new GameObject("LandingGhost");
+        SpriteRenderer renderer = ghost.AddComponent<SpriteRenderer>();
+        renderer.sprite = source.sprite;
+        renderer.sharedMaterial = source.sharedMaterial;
+        renderer.sortingLayerID = source.sortingLayerID;
+        renderer.sortingOrder = source.sortingOrder + 1;
+        Color ghostColor = CapsulePart.GetModeAccentColor(GameModeData.SelectedMode);
+        ghostColor.a = 0.58f;
+        renderer.color = ghostColor;
+        return ghost;
+    }
+
+    private void UpdateLandingGhosts()
+    {
+        if (isLanded || leftLandingGhost == null || rightLandingGhost == null)
+            return;
+
+        Vector2Int direction = Directions[rotation];
+        int ghostY = gridY;
+        int subX = gridX + direction.x;
+
+        while (true)
+        {
+            int subY = ghostY + direction.y;
+            bool baseCanFall = CanOccupy(gridX, ghostY + 1, subX, subY);
+            bool subCanFall = CanOccupy(subX, subY + 1, gridX, ghostY);
+            if (!baseCanFall || !subCanFall)
+                break;
+
+            ghostY++;
+        }
+
+        leftLandingGhost.transform.position = BoardManager.Instance.GridToWorld(gridX, ghostY);
+        rightLandingGhost.transform.position = BoardManager.Instance.GridToWorld(
+            subX,
+            ghostY + direction.y
+        );
+    }
+
+    private void ClearLandingGhosts()
+    {
+        if (leftLandingGhost != null)
+            Destroy(leftLandingGhost);
+        if (rightLandingGhost != null)
+            Destroy(rightLandingGhost);
+
+        leftLandingGhost = null;
+        rightLandingGhost = null;
+    }
+
+    private void OnDestroy()
+    {
+        ClearLandingGhosts();
     }
 
     public Sprite GetLeftSprite()

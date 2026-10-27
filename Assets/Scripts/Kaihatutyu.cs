@@ -5,7 +5,6 @@ using DG.Tweening;
 
 public class DevTMPController : MonoBehaviour
 {
-    [SerializeField] private Button buttonA;
     [SerializeField] private Button buttonB;
     [SerializeField] private TextMeshProUGUI devTMP;
 
@@ -14,14 +13,13 @@ public class DevTMPController : MonoBehaviour
         devTMP.gameObject.SetActive(true);
         devTMP.color = new Color(1, 1, 1, 0); // 完全透明
 
-        buttonA.onClick.AddListener(() => OnButtonClick(buttonA));
-        buttonB.onClick.AddListener(() => OnButtonClick(buttonB));
+        buttonB.onClick.AddListener(OnButtonClick);
     }
 
-    private void OnButtonClick(Button clickedButton)
+    private void OnButtonClick()
     {
         // 位置を合わせる
-        devTMP.rectTransform.position = clickedButton.GetComponent<RectTransform>().position;
+        devTMP.rectTransform.position = buttonB.GetComponent<RectTransform>().position;
 
         devTMP.text = "現在開発中です";
 

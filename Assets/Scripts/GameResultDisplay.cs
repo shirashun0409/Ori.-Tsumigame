@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
+using DG.Tweening;
 
 public class GameResultDisplay : MonoBehaviour
 {
@@ -27,6 +29,8 @@ public class GameResultDisplay : MonoBehaviour
 
     // 今回作った熟語
     private List<string> idioms = new List<string>();
+    private List<KanjiData> radicals = new List<KanjiData>();
+    private bool isRadicalMode;
 
     // 現在のページ
     private int currentPage = 0;
@@ -34,6 +38,12 @@ public class GameResultDisplay : MonoBehaviour
 
     private void Start()
     {
+        Canvas canvas = FindObjectOfType<Canvas>(true);
+        if (canvas != null)
+        {
+            MenuSceneEffects.AttachButtonEffects(canvas.transform.root);
+        }
+
         // 熟語を取得
         if (GameResultManager.Instance == null)
         {
@@ -44,8 +54,15 @@ public class GameResultDisplay : MonoBehaviour
             return;
         }
 
-        idioms =
-            GameResultManager.Instance.GetCreatedIdioms();
+        isRadicalMode = GameModeData.SelectedMode == GameMode.Radical;
+        if (isRadicalMode)
+        {
+            radicals = GameResultManager.Instance.GetClearedRadicals();
+        }
+        else
+        {
+            idioms = GameResultManager.Instance.GetCreatedIdioms();
+        }
 
 
         // 説明パネルを最初は非表示
@@ -153,11 +170,11 @@ public class GameResultDisplay : MonoBehaviour
 
 
         // 熟語がない場合
-        if (idioms == null || idioms.Count == 0)
+        if (GetItemCount() == 0)
         {
-            Debug.Log(
-                "今回作った熟語はありません。"
-            );
+            Debug.Log(isRadicalMode
+                ? "今回消した部首はありません。"
+                : "今回作った熟語はありません。");
 
             UpdatePageButtons();
 
@@ -172,11 +189,9 @@ public class GameResultDisplay : MonoBehaviour
         int startIndex =
             currentPage * IdiomsPerPage;
 
-        int endIndex =
-            Mathf.Min(
-                startIndex + IdiomsPerPage,
-                idioms.Count
-            );
+        int endIndex = Mathf.Min(
+            startIndex + IdiomsPerPage,
+            GetItemCount());
 
 
         // --------------------------------------------------
@@ -185,14 +200,29 @@ public class GameResultDisplay : MonoBehaviour
 
         for (int i = startIndex; i < endIndex; i++)
         {
-            string idiom = idioms[i];
-
-
             GameObject item =
                 Instantiate(
                     idiomButtonPrefab,
                     idiomListParent
                 );
+
+            MenuSceneEffects.AttachButtonEffect(item);
+            CanvasGroup itemCanvasGroup = item.GetComponent<CanvasGroup>();
+            if (itemCanvasGroup == null)
+                itemCanvasGroup = item.AddComponent<CanvasGroup>();
+            itemCanvasGroup.alpha = 0f;
+            itemCanvasGroup.blocksRaycasts = true;
+            itemCanvasGroup.DOFade(1f, 0.22f)
+                .SetDelay(MenuSceneEffects.ReducedMotion ? 0f : (i - startIndex) * 0.025f);
+
+            Vector3 itemScale = item.transform.localScale;
+            if (!MenuSceneEffects.ReducedMotion)
+            {
+                item.transform.localScale = itemScale * 0.92f;
+                item.transform.DOScale(itemScale, 0.24f)
+                    .SetEase(Ease.OutBack)
+                    .SetDelay((i - startIndex) * 0.025f);
+            }
 
 
             IdiomResultItem resultItem =
@@ -219,13 +249,21 @@ public class GameResultDisplay : MonoBehaviour
             );
 
 
-            // 熟語を設定
-            resultItem.SetIdiom(
-                idiom
-            );
+            if (isRadicalMode)
+            {
+                resultItem.SetRadical(radicals[i]);
+            }
+            else
+            {
+                resultItem.SetIdiom(idioms[i]);
+            }
 
 
             item.SetActive(true);
+            if (i == startIndex && EventSystem.current != null)
+            {
+                EventSystem.current.SetSelectedGameObject(item);
+            }
         }
 
 
@@ -234,7 +272,7 @@ public class GameResultDisplay : MonoBehaviour
 
 
         Debug.Log(
-            "熟語ページ表示: "
+            (isRadicalMode ? "部首" : "熟語") + "ページ表示: "
             + (currentPage + 1)
             + "ページ目 / "
             + GetPageCount()
@@ -284,15 +322,22 @@ public class GameResultDisplay : MonoBehaviour
     /// </summary>
     private int GetPageCount()
     {
-        if (idioms == null || idioms.Count == 0)
+        if (GetItemCount() == 0)
         {
             return 0;
         }
 
 
         return Mathf.CeilToInt(
-            (float)idioms.Count / IdiomsPerPage
+            (float)GetItemCount() / IdiomsPerPage
         );
+    }
+
+    private int GetItemCount()
+    {
+        return isRadicalMode
+            ? (radicals != null ? radicals.Count : 0)
+            : (idioms != null ? idioms.Count : 0);
     }
 
 

@@ -47,6 +47,16 @@ public class UIAudioManager : MonoBehaviour
 
         // 自動再生しない
         audioSource.playOnAwake = false;
+        AudioVolumeSettings.RegisterSeSource(audioSource);
+    }
+
+    private void OnDestroy()
+    {
+        AudioVolumeSettings.UnregisterSource(audioSource);
+        if (Instance == this)
+        {
+            Instance = null;
+        }
     }
 
     /// <summary>
@@ -120,6 +130,14 @@ public class UIAudioManager : MonoBehaviour
 
         // 今回再生したSEを記録
         group.lastPlayedIndex = selectedIndex;
+    }
+
+    public void PlaySound(AudioClip clip)
+    {
+        if (clip != null)
+        {
+            audioSource.PlayOneShot(clip);
+        }
     }
 
     /// <summary>

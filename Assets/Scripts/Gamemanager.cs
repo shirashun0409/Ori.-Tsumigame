@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
+using DG.Tweening;
 
 
 public class GameManager : MonoBehaviour
@@ -109,6 +110,19 @@ public class GameManager : MonoBehaviour
         bgmAudioSource.playOnAwake = false;
         bgmAudioSource.loop = true;
         bgmAudioSource.volume = 0f;
+        AudioVolumeSettings.RegisterBgmSource(bgmAudioSource, bgmVolume);
+        AudioVolumeSettings.SetBgmFade(bgmAudioSource, bgmVolume, 0f);
+        AudioVolumeSettings.RegisterSeSource(audioSource);
+    }
+
+    private void OnDestroy()
+    {
+        AudioVolumeSettings.UnregisterSource(audioSource);
+        AudioVolumeSettings.UnregisterSource(bgmAudioSource);
+        if (Instance == this)
+        {
+            Instance = null;
+        }
     }
 
     private void Start()
@@ -117,7 +131,6 @@ public class GameManager : MonoBehaviour
         {
             GameResultManager.Instance.ResetResult();
         }
-
 
         //==================================================
         // SE用AudioSource
@@ -134,6 +147,16 @@ public class GameManager : MonoBehaviour
 
         audioSource.playOnAwake = false;
 
+        //==================================================
+        // StartSceneで選択したゲームモードを受け取る
+        //==================================================
+
+        currentMode = GameModeData.SelectedMode;
+
+        Debug.Log(
+            "GameSceneで受け取ったゲームモード: " +
+            currentMode
+        );
 
         CurrentRegistry =
             KanjiRegistry.Entries;
@@ -158,9 +181,12 @@ public class GameManager : MonoBehaviour
 
         RankingRegisteredThisGame = false;
 
-        PlayerPrefs.DeleteKey("LastRankingRegistered");
-        PlayerPrefs.DeleteKey("LastRankingNickname");
-        PlayerPrefs.DeleteKey("LastRankingScore");
+        PlayerPrefs.DeleteKey(
+            GameModeData.GetModeSpecificKey("LastRankingRegistered"));
+        PlayerPrefs.DeleteKey(
+            GameModeData.GetModeSpecificKey("LastRankingNickname"));
+        PlayerPrefs.DeleteKey(
+            GameModeData.GetModeSpecificKey("LastRankingScore"));
 
         PlayerPrefs.Save();
 
@@ -402,6 +428,43 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void OnRadicalsCleared(
+        List<KanjiData> radicals,
+        List<KanjiData> clearedKanji)
+    {
+        if (radicals == null || radicals.Count == 0)
+        {
+            return;
+        }
+
+        if (GameResultManager.Instance != null)
+        {
+            GameResultManager.Instance.AddRadicals(radicals);
+        }
+
+        if (kanjiDisplay != null)
+        {
+            kanjiDisplay.SetRadicals(radicals);
+        }
+
+        if (meaningDisplay != null)
+        {
+            List<string> explanations = new List<string>();
+            var excludedKanji = new HashSet<string>();
+            foreach (KanjiData data in clearedKanji)
+            {
+                excludedKanji.Add(data.kanji);
+            }
+
+            foreach (KanjiData radical in radicals)
+            {
+                explanations.Add(
+                    KanjiDatabase.GetRadicalExplanation(radical, excludedKanji));
+            }
+
+            meaningDisplay.SetMeaning(string.Join("\n\n", explanations));
+        }
+    }
 
     //==================================================
     // ゲームモード
@@ -471,7 +534,11 @@ public class GameManager : MonoBehaviour
         Debug.Log("GAME OVER");
         Debug.Log("最終スコア: " + LastScore);
 
-        SceneManager.LoadScene("GameOverScene");
+        if (BoardManager.Instance != null)
+            BoardManager.Instance.PlayGameOverEffect();
+
+        DOVirtual.DelayedCall(0.7f, () => SceneTransitionEffect.LoadScene("GameOverScene"))
+            .SetUpdate(true);
     }
     //==================================================
     // ゲームBGM
@@ -495,11 +562,23 @@ public class GameManager : MonoBehaviour
 
         bgmAudioSource.clip = gameBGM;
 
-        bgmAudioSource.volume = 0f;
+        AudioVolumeSettings.SetBgmFade(bgmAudioSource, bgmVolume, 0f);
 
         bgmAudioSource.Play();
 
         StartCoroutine(FadeInBGM());
+    }
+
+    public void PauseGameBGM()
+    {
+        if (bgmAudioSource != null)
+            bgmAudioSource.Pause();
+    }
+
+    public void ResumeGameBGM()
+    {
+        if (bgmAudioSource != null && bgmAudioSource.clip == gameBGM)
+            bgmAudioSource.UnPause();
     }
 
     private System.Collections.IEnumerator FadeInBGM()
@@ -513,17 +592,11 @@ public class GameManager : MonoBehaviour
             float progress =
                 timer / bgmFadeInDuration;
 
-            bgmAudioSource.volume =
-                Mathf.Lerp(
-                    0f,
-                    bgmVolume,
-                    progress
-                );
+            AudioVolumeSettings.SetBgmFade(bgmAudioSource, bgmVolume, progress);
 
             yield return null;
         }
 
-        bgmAudioSource.volume = bgmVolume;
+        AudioVolumeSettings.SetBgmFade(bgmAudioSource, bgmVolume, 1f);
     }
 }
-

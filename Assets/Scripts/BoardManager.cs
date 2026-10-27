@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
 using TMPro;
+using UnityEngine.UI;
 
 public class BoardManager : MonoBehaviour
 {
@@ -13,6 +14,11 @@ public class BoardManager : MonoBehaviour
 
     [SerializeField] private GameObject cellPrefab;
     [SerializeField] private float cellSize = 1.0f;
+    private ParticleSystem clearBurstEffect;
+    private MaterialPropertyBlock clearEffectProperties;
+    private CapsulePart lastPlacedLeftPart;
+    private CapsulePart lastPlacedRightPart;
+    private int clearChainLevel = 1;
 
     public float CellSize => cellSize;
 
@@ -40,8 +46,21 @@ public class BoardManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+        clearEffectProperties = new MaterialPropertyBlock();
 
         board = new CapsulePart[Width, Height];
+
+        // Scene内に置かれている演出用パーティクルを取得（初期状態は非表示）。
+        foreach (ParticleSystem candidate in Resources.FindObjectsOfTypeAll<ParticleSystem>())
+        {
+            if (candidate.gameObject.scene.IsValid() &&
+                candidate.gameObject.name == "JukugoBurstEffect")
+            {
+                clearBurstEffect = candidate;
+                ConfigureClearBurstEffect();
+                break;
+            }
+        }
     }
 
 
@@ -153,7 +172,6 @@ public class BoardManager : MonoBehaviour
         }
     }
 
-
     //==================================================
     // 座標変換
     //==================================================
@@ -202,6 +220,8 @@ public class BoardManager : MonoBehaviour
 
         board[leftX, leftY] = leftPart;
         board[rightX, rightY] = rightPart;
+        lastPlacedLeftPart = leftPart;
+        lastPlacedRightPart = rightPart;
 
         ScoreManager.Instance.ResetCombo();
         if (ScoreManager.Instance != null)
@@ -266,6 +286,8 @@ public class BoardManager : MonoBehaviour
 
         board[x, y] = null;
 
+        PlayClearBurstEffect(part.transform.position);
+
         part.transform
             .DOScale(0f, 0.15f)
             .SetEase(Ease.InBack);
@@ -278,6 +300,178 @@ public class BoardManager : MonoBehaviour
             part.gameObject,
             0.15f
         );
+    }
+
+    private void ConfigureClearBurstEffect()
+    {
+        if (clearBurstEffect == null)
+            return;
+
+        ParticleSystem.MainModule main = clearBurstEffect.main;
+        main.duration = 0.55f;
+        main.loop = false;
+        main.playOnAwake = false;
+        main.startLifetime = new ParticleSystem.MinMaxCurve(0.3f, 0.55f);
+        main.startSpeed = new ParticleSystem.MinMaxCurve(2.8f, 4.8f);
+        main.startSize = new ParticleSystem.MinMaxCurve(0.045f, 0.11f);
+        main.startColor = Color.white;
+        main.stopAction = ParticleSystemStopAction.Destroy;
+
+        ParticleSystem.ColorOverLifetimeModule colorOverLifetime = clearBurstEffect.colorOverLifetime;
+        colorOverLifetime.enabled = true;
+        Gradient fadeGradient = new Gradient();
+        fadeGradient.SetKeys(
+            new[]
+            {
+                new GradientColorKey(Color.white, 0f),
+                new GradientColorKey(Color.white, 1f)
+            },
+            new[]
+            {
+                new GradientAlphaKey(1f, 0f),
+                new GradientAlphaKey(0.9f, 0.55f),
+                new GradientAlphaKey(0f, 1f)
+            }
+        );
+        colorOverLifetime.color = new ParticleSystem.MinMaxGradient(fadeGradient);
+
+        ParticleSystem.EmissionModule emission = clearBurstEffect.emission;
+        emission.rateOverTime = 0f;
+
+        ParticleSystem.ShapeModule shape = clearBurstEffect.shape;
+        shape.shapeType = ParticleSystemShapeType.Sphere;
+        shape.radius = 0.035f;
+
+        ParticleSystemRenderer particleRenderer = clearBurstEffect.GetComponent<ParticleSystemRenderer>();
+        if (particleRenderer != null)
+        {
+            particleRenderer.sortingOrder = 5;
+            // 粒子シェーダーによっては ParticleSystem の色指定が反映されないため、
+            // Renderer のマテリアル側にも基準色を設定する。
+            Material effectMaterial = particleRenderer.material;
+            Color foilGold = new Color(0.68f, 0.61f, 0.46f, 1f);
+            if (effectMaterial.HasProperty("_BaseColor"))
+                effectMaterial.SetColor("_BaseColor", foilGold);
+            if (effectMaterial.HasProperty("_Color"))
+                effectMaterial.SetColor("_Color", foilGold);
+        }
+    }
+
+    private void PlayClearBurstEffect(Vector3 position)
+    {
+        if (clearBurstEffect == null)
+            return;
+
+        // 同じフレームに複数マスを消す場合も各位置に表示できるよう、
+        // 漢字ごとに独立したParticleSystemを生成する。
+        ParticleSystem effect = Instantiate(
+            clearBurstEffect,
+            position,
+            Quaternion.identity
+        );
+        effect.gameObject.SetActive(true);
+        ApplyClearEffectColor(effect);
+        effect.Play(true);
+        ParticleSystem.MainModule main = effect.main;
+        float chainBonus = Mathf.Clamp(clearChainLevel - 1, 0, 5);
+        main.startSpeed = new ParticleSystem.MinMaxCurve(
+            2.8f + chainBonus * 0.3f,
+            4.8f + chainBonus * 0.55f
+        );
+        effect.Emit(22 + Mathf.RoundToInt(chainBonus * 4f));
+    }
+
+    private void ApplyClearEffectColor(ParticleSystem effect)
+    {
+        if (GameModeData.SelectedMode != GameMode.Idiom)
+        {
+            return;
+        }
+
+        Color modeColor = CapsulePart.GetModeAccentColor(GameModeData.SelectedMode);
+
+        ParticleSystem.MainModule main = effect.main;
+        main.startColor = modeColor;
+
+        Gradient fadeGradient = new Gradient();
+        fadeGradient.SetKeys(
+            new[]
+            {
+                new GradientColorKey(modeColor, 0f),
+                new GradientColorKey(modeColor, 1f)
+            },
+            new[]
+            {
+                new GradientAlphaKey(1f, 0f),
+                new GradientAlphaKey(0.9f, 0.55f),
+                new GradientAlphaKey(0f, 1f)
+            }
+        );
+        ParticleSystem.ColorOverLifetimeModule colorOverLifetime = effect.colorOverLifetime;
+        colorOverLifetime.enabled = true;
+        colorOverLifetime.color = new ParticleSystem.MinMaxGradient(fadeGradient);
+
+        ParticleSystemRenderer particleRenderer = effect.GetComponent<ParticleSystemRenderer>();
+        if (particleRenderer == null || particleRenderer.sharedMaterial == null)
+        {
+            return;
+        }
+
+        clearEffectProperties.Clear();
+        particleRenderer.GetPropertyBlock(clearEffectProperties);
+        Material material = particleRenderer.sharedMaterial;
+        if (material.HasProperty("_BaseColor"))
+            clearEffectProperties.SetColor("_BaseColor", modeColor);
+        if (material.HasProperty("_Color"))
+            clearEffectProperties.SetColor("_Color", modeColor);
+        particleRenderer.SetPropertyBlock(clearEffectProperties);
+    }
+
+    private void HighlightMatchedParts(HashSet<Vector2Int> positions)
+    {
+        foreach (Vector2Int position in positions)
+        {
+            CapsulePart part = GetPart(position.x, position.y);
+            if (part == null)
+                continue;
+
+            SpriteRenderer spriteRenderer = part.GetComponent<SpriteRenderer>();
+            if (spriteRenderer == null)
+                continue;
+
+            Color originalColor = spriteRenderer.color;
+            Color highlightColor = GameModeData.SelectedMode == GameMode.Idiom
+                ? Color.Lerp(CapsulePart.IdiomColor, Color.white, 0.28f)
+                : new Color(1f, 0.91f, 0.62f, originalColor.a);
+            highlightColor.a = originalColor.a;
+            spriteRenderer.DOKill();
+            spriteRenderer.DOColor(highlightColor, 0.07f)
+                .SetLoops(2, LoopType.Yoyo);
+        }
+    }
+
+    public void PlayGameOverEffect()
+    {
+        if (lastPlacedLeftPart != null)
+            lastPlacedLeftPart.transform.DOShakePosition(0.45f, new Vector3(0.06f, 0.04f, 0f), 12, 90f);
+        if (lastPlacedRightPart != null)
+            lastPlacedRightPart.transform.DOShakePosition(0.45f, new Vector3(0.06f, 0.04f, 0f), 12, 90f);
+
+        GameObject overlayObject = new GameObject("GameOverDarkOverlay");
+        Canvas canvas = overlayObject.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 10000;
+
+        RectTransform rect = overlayObject.GetComponent<RectTransform>();
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+
+        Image overlay = overlayObject.AddComponent<Image>();
+        overlay.color = new Color(0f, 0f, 0f, 0f);
+        overlay.raycastTarget = false;
+        overlay.DOFade(0.68f, 0.55f).SetUpdate(true);
     }
 
 
@@ -424,6 +618,7 @@ public class BoardManager : MonoBehaviour
     private IEnumerator ChainCoroutine()
     {
         isChainProcessing = true;
+        int chainCount = 0;
 
         while (true)
         {
@@ -438,258 +633,467 @@ public class BoardManager : MonoBehaviour
             }
 
 
+            //==================================================
+            // 現在のゲームモードを取得
+            //==================================================
+
+            GameManager gameManager =
+                GameManager.Instance;
+
+            if (gameManager == null)
+            {
+                break;
+            }
+
+
+            //==================================================
+            // 隣接する成立ペアを探す
+            //==================================================
+
             List<IdiomMatch> matches =
                 KanjiMatchFinder.FindIdiomMatches();
 
             if (matches.Count == 0)
-                break;
-
-
-            //==================================================
-            // 成立した熟語
-            //==================================================
-
-            List<string> idioms =
-                new List<string>();
-
-
-            //==================================================
-            // 実際に消すマス
-            //==================================================
-
-            HashSet<Vector2Int> uniquePositions =
-                new HashSet<Vector2Int>();
-
-
-            //==================================================
-            // 熟語を調べる
-            //==================================================
-
-            foreach (IdiomMatch match in matches)
             {
-                string idiom =
-                    BuildIdiomString(
-                        match.First,
-                        match.Second
-                    );
+                break;
+            }
 
-                if (string.IsNullOrEmpty(idiom))
-                    continue;
+            chainCount++;
+            clearChainLevel = chainCount;
 
 
-                // 辞書に存在する熟語だけ有効
-                if (!IdiomDictionary.Contains(idiom))
-                    continue;
+            //==================================================
+            // 熟語モード
+            //==================================================
+
+            if (gameManager.IsIdiomMode())
+            {
+                //==================================================
+                // 成立した熟語
+                //==================================================
+
+                List<string> idioms =
+                    new List<string>();
 
 
-                // 同じ熟語を重複して数えない
-                if (!idioms.Contains(idiom))
+                //==================================================
+                // 実際に消すマス
+                //==================================================
+
+                HashSet<Vector2Int> uniquePositions =
+                    new HashSet<Vector2Int>();
+
+
+                //==================================================
+                // 熟語を調べる
+                //==================================================
+
+                foreach (IdiomMatch match in matches)
                 {
-                    idioms.Add(idiom);
+                    string idiom =
+                        BuildIdiomString(
+                            match.First,
+                            match.Second
+                        );
+
+                    if (string.IsNullOrEmpty(idiom))
+                        continue;
+
+
+                    //==================================================
+                    // 辞書に存在する熟語だけ有効
+                    //==================================================
+
+                    if (!IdiomDictionary.Contains(idiom))
+                        continue;
+
+
+                    //==================================================
+                    // 同じ熟語を重複して数えない
+                    //==================================================
+
+                    if (!idioms.Contains(idiom))
+                    {
+                        idioms.Add(idiom);
+                    }
+
+
+                    //==================================================
+                    // 実際に消す漢字の位置を記録
+                    //==================================================
+
+                    uniquePositions.Add(match.First);
+                    uniquePositions.Add(match.Second);
                 }
 
 
-                // 実際に消す漢字の位置を記録
-                uniquePositions.Add(match.First);
-                uniquePositions.Add(match.Second);
-            }
+                //==================================================
+                // 有効な熟語がなければ終了
+                //==================================================
+
+                if (idioms.Count == 0)
+                    break;
+
+                HighlightMatchedParts(uniquePositions);
+                yield return new WaitForSeconds(0.14f);
 
 
-            //==================================================
-            // 有効な熟語がなければ終了
-            //==================================================
+                //==================================================
+                // スコア計算
+                //==================================================
 
-            if (idioms.Count == 0)
-                break;
+                if (ScoreManager.Instance != null)
+                {
+                    ScoreManager.Instance.AddScore(
+                        uniquePositions.Count,
+                        idioms.Count
+                    );
+                }
 
 
-            //==================================================
-            // スコア計算
-            //==================================================
+                //==================================================
+                // 今回のゲームで作った熟語を記録
+                //==================================================
 
-            if (ScoreManager.Instance != null)
-            {
-                ScoreManager.Instance.AddScore(
-                    uniquePositions.Count,
-                    idioms.Count
+                if (GameResultManager.Instance != null)
+                {
+                    foreach (string idiom in idioms)
+                    {
+                        GameResultManager.Instance.AddIdiom(idiom);
+                    }
+                }
+
+
+                //==================================================
+                // 熟語表示
+                //==================================================
+
+                GameManager.Instance.OnIdiomsCreated(
+                    idioms
                 );
-            }
 
 
-            //==================================================
-            // 今回のゲームで作った熟語を記録
-            //==================================================
+                //==================================================
+                // 読み・意味・構造
+                //==================================================
 
-            if (GameResultManager.Instance != null)
-            {
+                List<string> readings =
+                    new List<string>();
+
+                List<string> meanings =
+                    new List<string>();
+
+
                 foreach (string idiom in idioms)
                 {
-                    GameResultManager.Instance.AddIdiom(idiom);
+                    string reading =
+                        IdiomDictionary.GetReading(
+                            idiom
+                        );
+
+                    string meaning =
+                        IdiomDictionary.GetMeaning(
+                            idiom
+                        );
+
+                    string structure =
+                        IdiomDictionary.GetStructure(
+                            idiom
+                        );
+
+
+                    //==============================================
+                    // 読み
+                    //==============================================
+
+                    if (string.IsNullOrEmpty(reading))
+                    {
+                        readings.Add("？？？");
+                    }
+                    else
+                    {
+                        readings.Add(reading);
+                    }
+
+
+                    //==============================================
+                    // 意味 + 構造
+                    //==============================================
+
+                    if (string.IsNullOrEmpty(meaning))
+                    {
+                        meanings.Add(
+                            idiom + "：？？？"
+                        );
+                    }
+                    else if (string.IsNullOrEmpty(structure))
+                    {
+                        meanings.Add(
+                            idiom + "：" + meaning
+                        );
+                    }
+                    else
+                    {
+                        meanings.Add(
+                            idiom +
+                            "：" +
+                            meaning +
+                            "（構造：" +
+                            structure +
+                            "）"
+                        );
+                    }
                 }
-            }
 
 
-            //==================================================
-            // 熟語表示
-            //==================================================
+                //==================================================
+                // 読み表示
+                //==================================================
 
-            GameManager.Instance.OnIdiomsCreated(
-                idioms
-            );
-
-
-            //==================================================
-            // 読み・意味・構造
-            //
-            // 熟語と同じ順番で作る
-            //==================================================
-
-            List<string> readings =
-                new List<string>();
-
-            List<string> meanings =
-                new List<string>();
-
-
-            foreach (string idiom in idioms)
-            {
-                string reading =
-                    IdiomDictionary.GetReading(
-                        idiom
-                    );
-
-                string meaning =
-                    IdiomDictionary.GetMeaning(
-                        idiom
-                    );
-
-                string structure =
-                    IdiomDictionary.GetStructure(
-                        idiom
-                    );
-
-
-                //==============================================
-                // 読み
-                //
-                // 熟語1つにつき必ず1行
-                //==============================================
-
-                if (string.IsNullOrEmpty(reading))
+                if (ReadingText != null)
                 {
-                    readings.Add("？？？");
-                }
-                else
-                {
-                    readings.Add(reading);
-                }
-
-
-                //==============================================
-                // 意味 + 構造
-                //
-                // 熟語1つにつき必ず1行
-                //==============================================
-
-                if (string.IsNullOrEmpty(meaning))
-                {
-                    meanings.Add(
-                        idiom + "：？？？"
+                    ReadingText.text = string.Join(
+                        "　",
+                        readings
                     );
                 }
-                else if (string.IsNullOrEmpty(structure))
+
+
+                //==================================================
+                // 意味表示
+                //==================================================
+
+                if (MeaningText != null)
                 {
-                    meanings.Add(
-                        idiom + "：" + meaning
-                    );
+                    MeaningText.text =
+                        string.Join(
+                            "\n",
+                            meanings
+                        );
                 }
-                else
-                {
-                    meanings.Add(
-                        idiom +
-                        "：" +
-                        meaning +
-                        "（構造：" +
-                        structure +
-                        "）"
-                    );
-                }
-            }
 
 
-            //==================================================
-            // 読み表示
-            //==================================================
+                //==================================================
+                // コンボSE
+                //==================================================
 
-            if (ReadingText != null)
-            {
-                ReadingText.text = string.Join(
-                    "　",
-                    readings
+                GameManager.Instance.PlaySE(
+                    GameManager.Instance.comboSE
                 );
-            }
 
 
-            //==================================================
-            // 意味表示
-            //==================================================
+                //==================================================
+                // 漢字を消す
+                //==================================================
 
-            if (MeaningText != null)
-            {
-                MeaningText.text =
-                    string.Join(
-                        "\n",
-                        meanings
+                foreach (Vector2Int pos in uniquePositions)
+                {
+                    RemovePart(
+                        pos.x,
+                        pos.y
                     );
-            }
+                }
 
 
-            //==================================================
-            // コンボSE
-            //==================================================
+                //==================================================
+                // 重力
+                //==================================================
 
-            GameManager.Instance.PlaySE(
-                GameManager.Instance.comboSE
-            );
+                ApplyGravity();
 
-
-            //==================================================
-            // 漢字を消す
-            //==================================================
-
-            foreach (Vector2Int pos in uniquePositions)
-            {
-                RemovePart(
-                    pos.x,
-                    pos.y
-                );
-            }
-
-
-            //==================================================
-            // 重力
-            //==================================================
-
-            ApplyGravity();
-
-            yield return null;
-
-
-            // 重力が終わるまで待つ
-            while (isGravityFalling)
-            {
                 yield return null;
+
+
+                //==================================================
+                // 重力が終わるまで待つ
+                //==================================================
+
+                while (isGravityFalling)
+                {
+                    yield return null;
+                }
+
+
+                //==================================================
+                // 1フレーム待つ
+                //==================================================
+
+                yield return null;
+
+                continue;
             }
 
 
-            // 1フレーム待つ
-            yield return null;
+            //==================================================
+            // 部首モード
+            //==================================================
+
+            if (gameManager.IsRadicalMode())
+            {
+                //==================================================
+                // 実際に消すマス
+                //==================================================
+
+                HashSet<Vector2Int> uniquePositions =
+                    new HashSet<Vector2Int>();
+
+
+                //==================================================
+                // 同じ部首のペアを記録
+                //==================================================
+
+                foreach (IdiomMatch match in matches)
+                {
+                    uniquePositions.Add(match.First);
+                    uniquePositions.Add(match.Second);
+                }
+
+
+                //==================================================
+                // 有効なペアがなければ終了
+                //==================================================
+
+                if (uniquePositions.Count == 0)
+                    break;
+
+                // 熟語モードと同じ消去前の強調演出を行う
+                HighlightMatchedParts(uniquePositions);
+                yield return new WaitForSeconds(0.14f);
+
+
+                //==================================================
+                // 部首モードでは
+                // 熟語の読み・意味・構造は表示しない
+                //==================================================
+
+                if (ReadingText != null)
+                {
+                    ReadingText.text = "";
+                }
+
+                if (MeaningText != null)
+                {
+                    MeaningText.text = "";
+                }
+
+                List<KanjiData> radicalDisplays = new List<KanjiData>();
+                List<KanjiData> clearedKanji = new List<KanjiData>();
+                HashSet<string> seenKanji = new HashSet<string>();
+                HashSet<string> seenRadicals = new HashSet<string>();
+                foreach (Vector2Int pos in uniquePositions)
+                {
+                    CapsulePart part = GetPart(pos.x, pos.y);
+                    KanjiData data = part != null
+                        ? part.GetKanjiData()
+                        : null;
+
+                    if (data != null &&
+                        !string.IsNullOrEmpty(data.radical))
+                    {
+                        if (seenKanji.Add(data.kanji))
+                        {
+                            clearedKanji.Add(data);
+                        }
+
+                        if (seenRadicals.Add(KanjiDatabase.GetRadicalDisplayKey(data)))
+                        {
+                            radicalDisplays.Add(data);
+                        }
+                    }
+                }
+
+                GameManager.Instance.OnRadicalsCleared(
+                    radicalDisplays,
+                    clearedKanji);
+
+
+                //==================================================
+                // 部首モードのスコア
+                //
+                // 1字200点に、2組目以降の同時消しボーナスを加算
+                //==================================================
+
+                if (ScoreManager.Instance != null)
+                {
+                    ScoreManager.Instance.AddRadicalScore(
+                        uniquePositions.Count,
+                        matches.Count
+                    );
+                }
+
+
+                //==================================================
+                // コンボSE
+                //==================================================
+
+                GameManager.Instance.PlaySE(
+                    GameManager.Instance.comboSE
+                );
+
+
+                //==================================================
+                // 漢字を消す
+                //==================================================
+
+                foreach (Vector2Int pos in uniquePositions)
+                {
+                    RemovePart(
+                        pos.x,
+                        pos.y
+                    );
+                }
+
+
+                //==================================================
+                // 重力
+                //==================================================
+
+                ApplyGravity();
+
+                yield return null;
+
+
+                //==================================================
+                // 重力が終わるまで待つ
+                //==================================================
+
+                while (isGravityFalling)
+                {
+                    yield return null;
+                }
+
+
+                //==================================================
+                // 1フレーム待つ
+                //==================================================
+
+                yield return null;
+
+                continue;
+            }
+
+
+            //==================================================
+            // 読みモード
+            //==================================================
+
+            if (gameManager.IsReadingMode())
+            {
+                // 読みモードはまだ未実装
+                break;
+            }
+
+
+            //==================================================
+            // 不明なモード
+            //==================================================
+
+            break;
         }
 
 
         isChainProcessing = false;
     }
-
 
     public bool IsChainProcessing()
     {

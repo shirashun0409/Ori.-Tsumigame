@@ -1,0 +1,5 @@
+<Project>
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'Assembly-CSharp'">
+    <Compile Include="$(MSBuildThisFileDirectory)Assets\Scripts\MobileGameControls.cs" />
+  </ItemGroup>
+</Project>
