@@ -35,15 +35,8 @@ public sealed class MobileGameControls : MonoBehaviour
 
     private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        if (scene.name != "GameScene" ||
-            (!Application.isMobilePlatform && !Input.touchSupported))
-        {
-            return;
-        }
-
-        GameObject controlsObject = new GameObject("MobileGameControls");
-        SceneManager.MoveGameObjectToScene(controlsObject, scene);
-        controlsObject.AddComponent<MobileGameControls>();
+        // Mobile support buttons removed.
+        return;
     }
 
     public static bool IsHeld(Control control)
@@ -63,21 +56,8 @@ public sealed class MobileGameControls : MonoBehaviour
 
     private void Awake()
     {
-        Canvas gameCanvas = FindGameCanvas();
-        if (gameCanvas == null)
-        {
-            Debug.LogError("MobileGameControls: Could not find the game Canvas containing SettingsPanel.", this);
-            enabled = false;
-            return;
-        }
-
-        controlsRoot = CreateControlsRoot(gameCanvas.transform);
-        CreateTouchButton("LEFT", new Vector2(0.10f, 0.12f), new Vector2(112f, 84f), Control.Left);
-        CreateTouchButton("RIGHT", new Vector2(0.24f, 0.12f), new Vector2(112f, 84f), Control.Right);
-        CreateTouchButton("TURN", new Vector2(0.72f, 0.12f), new Vector2(112f, 84f), rotate: true);
-        CreateTouchButton("DROP", new Vector2(0.87f, 0.12f), new Vector2(112f, 84f), Control.Drop);
-        CreateTouchButton("SETTINGS", new Vector2(0.92f, 0.91f), new Vector2(140f, 58f), onClick: ToggleSettings);
-        AddMobileCloseButton();
+        // Mobile support buttons removed.
+        Destroy(gameObject);
     }
 
     private Canvas FindGameCanvas()
