@@ -11,7 +11,7 @@
   </head>
   <body>
     <div id="unity-container" class="unity-desktop">
-      <canvas id="unity-canvas" width=960 height=600 tabindex="-1"></canvas>
+      <canvas id="unity-canvas" width=960 height=540 tabindex="-1"></canvas>
       <div id="unity-loading-bar">
         <div id="unity-logo"></div>
         <div id="unity-progress-bar-empty">
@@ -103,13 +103,13 @@
 
 
       } else {
-        // Keep the 960x600 game resolution and scale the canvas to fit the browser viewport.
+        // Keep the game's 16:9 resolution and scale it to fit the browser viewport.
         canvas.style.width = "960px";
-        canvas.style.height = "600px";
+        canvas.style.height = "540px";
         var unityContainer = document.querySelector("#unity-container");
         var resizeUnityContainer = () => {
           var availableHeight = Math.max(1, window.innerHeight - 38);
-          var scale = Math.min(1, window.innerWidth / 960, availableHeight / 600);
+          var scale = Math.min(1, window.innerWidth / 960, availableHeight / 540);
           unityContainer.style.setProperty("--game-scale", scale);
         };
         resizeUnityContainer();
