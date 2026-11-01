@@ -31,14 +31,25 @@ public class StartSceneManager : MonoBehaviour
 
     private Button helpButton;
     private TMP_Text helpButtonLabel;
+    private Button modoruButton;
+    private RectTransform modoruButtonRectTransform;
+    private Vector2 modoruButtonInitialPosition;
     private int currentIndex = 0;
     private bool isMoving = false;
     private int controllerSlideDirection;
     private static bool hasShownSlideHint = false;
+    private static bool hasViewedIdiomExplanation = false;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetSessionState()
+    {
+        hasViewedIdiomExplanation = false;
+    }
 
     private void Start()
     {
         SetupHelpButton();
+        SetupModoruButton();
 
         if (modeSelectController != null)
         {
@@ -74,6 +85,54 @@ public class StartSceneManager : MonoBehaviour
         helpButton.onClick.AddListener(ToggleHelpMode);
         UpdateHelpButtonLabel();
         MenuSceneEffects.AttachButtonEffect(helpButtonObject);
+    }
+
+    private void SetupModoruButton()
+    {
+        GameObject modoruButtonObject = FindGameObjectIncludingInactive("ModoruButton");
+        if (modoruButtonObject == null)
+        {
+            // UIが未配置の場合は何もしない（UIは別途作成済み前提）
+            return;
+        }
+
+        modoruButton = modoruButtonObject.GetComponent<Button>();
+        if (modoruButton == null)
+            modoruButton = modoruButtonObject.GetComponentInChildren<Button>();
+
+        if (modoruButton == null)
+        {
+            Debug.LogError("StartSceneManager: ModoruButton requires a Button.", modoruButtonObject);
+            return;
+        }
+
+        modoruButton.onClick.RemoveListener(ReturnToModeSelect);
+        modoruButton.onClick.AddListener(ReturnToModeSelect);
+        modoruButtonRectTransform = modoruButton.GetComponent<RectTransform>();
+        if (modoruButtonRectTransform == null)
+        {
+            Debug.LogError("StartSceneManager: ModoruButton requires a RectTransform.", modoruButtonObject);
+            modoruButton = null;
+            return;
+        }
+
+        modoruButtonInitialPosition = modoruButtonRectTransform.anchoredPosition;
+        modoruButton.interactable = false;
+        MenuSceneEffects.AttachButtonEffect(modoruButtonObject);
+        modoruButtonObject.SetActive(false);
+    }
+
+    private static GameObject FindGameObjectIncludingInactive(string name)
+    {
+        GameObject[] all = Resources.FindObjectsOfTypeAll<GameObject>();
+        foreach (GameObject go in all)
+        {
+            if (go.name == name && go.scene.IsValid())
+            {
+                return go;
+            }
+        }
+        return GameObject.Find(name);
     }
 
     private void ToggleHelpMode()
@@ -157,7 +216,16 @@ public class StartSceneManager : MonoBehaviour
         // 熟語モードを保存
         GameModeData.SelectedMode = GameMode.Idiom;
 
-        TransitionToExplanation();
+        if (hasViewedIdiomExplanation)
+        {
+            StartGame();
+            return;
+        }
+
+        if (TransitionToExplanation())
+        {
+            hasViewedIdiomExplanation = true;
+        }
 
         currentIndex = 0;
         isMoving = false;
@@ -178,6 +246,16 @@ public class StartSceneManager : MonoBehaviour
             }
         }
 
+        if (modoruButtonRectTransform != null)
+        {
+            modoruButtonRectTransform.DOKill();
+            modoruButtonRectTransform.anchoredPosition = modoruButtonInitialPosition;
+        }
+        if (modoruButton != null)
+        {
+            modoruButton.interactable = true;
+            modoruButton.gameObject.SetActive(true);
+        }
         UpdatePageIndicator();
 
         if (slideGuide != null)
@@ -209,8 +287,17 @@ public class StartSceneManager : MonoBehaviour
 
         PlaySlideButtonSE();
         isMoving = true;
+        if (modoruButton != null)
+            modoruButton.interactable = false;
 
         int nextIndex = currentIndex + 1;
+        if (modoruButtonRectTransform != null)
+        {
+            modoruButtonRectTransform.DOKill();
+            modoruButtonRectTransform
+                .DOAnchorPosX(modoruButtonInitialPosition.x - nextIndex * slideDistance, duration)
+                .SetEase(Ease.InOutCubic);
+        }
 
         // すべてのTweenを停止して、
         // 現在のページ番号を基準に正しい位置へ移動
@@ -239,6 +326,8 @@ public class StartSceneManager : MonoBehaviour
         DOVirtual.DelayedCall(duration, () =>
         {
             isMoving = false;
+            if (modoruButton != null)
+                modoruButton.interactable = currentIndex == 0;
             UpdatePageIndicator();
         });
     }
@@ -258,6 +347,16 @@ public class StartSceneManager : MonoBehaviour
         isMoving = true;
 
         int previousIndex = currentIndex - 1;
+        if (modoruButton != null)
+            modoruButton.interactable = false;
+
+        if (modoruButtonRectTransform != null)
+        {
+            modoruButtonRectTransform.DOKill();
+            modoruButtonRectTransform
+                .DOAnchorPosX(modoruButtonInitialPosition.x - previousIndex * slideDistance, duration)
+                .SetEase(Ease.InOutCubic);
+        }
 
         // すべてのTweenを停止して、
         // 現在のページ番号を基準に正しい位置へ移動
@@ -281,6 +380,8 @@ public class StartSceneManager : MonoBehaviour
         DOVirtual.DelayedCall(duration, () =>
         {
             isMoving = false;
+            if (modoruButton != null)
+                modoruButton.interactable = currentIndex == 0;
             UpdatePageIndicator();
         });
     }
@@ -293,10 +394,10 @@ public class StartSceneManager : MonoBehaviour
         SceneTransitionEffect.LoadScene("GameScene");
     }
 
-    private void TransitionToExplanation()
+    private bool TransitionToExplanation()
     {
         if (modeSelectGroup == null || explanationGroup == null)
-            return;
+            return false;
 
         if (helpButton != null)
         {
@@ -326,6 +427,7 @@ public class StartSceneManager : MonoBehaviour
         modeGroup.blocksRaycasts = false;
         modeSelectGroup.transform.DOScale(MenuSceneEffects.ReducedMotion ? 1f : 0.94f, transitionDuration).SetEase(Ease.InBack);
         modeGroup.DOFade(0f, transitionDuration).OnComplete(() => modeSelectGroup.SetActive(false));
+        return true;
     }
 
     private void PlayFirstSlideHint()
@@ -390,6 +492,7 @@ public class StartSceneManager : MonoBehaviour
         {
             rightArrow.SetActive(currentIndex < slides.Length - 1);
         }
+
     }
 
     private void SetNavigationArrowsVisible(bool visible)
@@ -399,6 +502,66 @@ public class StartSceneManager : MonoBehaviour
 
         if (rightArrow != null)
             rightArrow.SetActive(visible && currentIndex < slides.Length - 1);
+    }
+
+    public void ReturnToModeSelect()
+    {
+        PlayModeSelectionSE();
+
+        if (modeSelectGroup == null || explanationGroup == null)
+            return;
+
+        hasViewedIdiomExplanation = false;
+
+        // スライド状態をリセット
+        for (int i = 0; i < slides.Length; i++)
+        {
+            slides[i].DOKill();
+            slides[i].anchoredPosition = (i == 0)
+                ? Vector2.zero
+                : new Vector2(slideDistance * i, 0f);
+        }
+
+        currentIndex = 0;
+        isMoving = false;
+
+        if (modoruButton != null)
+        {
+            modoruButtonRectTransform.DOKill();
+            modoruButtonRectTransform.anchoredPosition = modoruButtonInitialPosition;
+            modoruButton.interactable = false;
+            modoruButton.gameObject.SetActive(false);
+        }
+
+        if (helpButton != null)
+            helpButton.gameObject.SetActive(true);
+
+        CanvasGroup modeGroup = modeSelectGroup.GetComponent<CanvasGroup>();
+        if (modeGroup == null)
+            modeGroup = modeSelectGroup.AddComponent<CanvasGroup>();
+
+        CanvasGroup explanationCanvasGroup = explanationGroup.GetComponent<CanvasGroup>();
+        if (explanationCanvasGroup == null)
+            explanationCanvasGroup = explanationGroup.AddComponent<CanvasGroup>();
+
+        modeSelectGroup.SetActive(true);
+        if (EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(null);
+
+        modeGroup.alpha = 0f;
+        modeGroup.interactable = true;
+        modeGroup.blocksRaycasts = true;
+        modeSelectGroup.transform.localScale = MenuSceneEffects.ReducedMotion ? Vector3.one : Vector3.one * 0.94f;
+
+        explanationCanvasGroup.interactable = false;
+        explanationCanvasGroup.blocksRaycasts = false;
+
+        float transitionDuration = MenuSceneEffects.ReducedMotion ? 0.12f : 0.28f;
+        modeSelectGroup.transform.DOScale(1f, transitionDuration).SetEase(Ease.OutBack);
+        modeGroup.DOFade(1f, transitionDuration);
+
+        explanationGroup.transform.DOScale(MenuSceneEffects.ReducedMotion ? 1f : 0.98f, transitionDuration).SetEase(Ease.InBack);
+        explanationCanvasGroup.DOFade(0f, transitionDuration).OnComplete(() => explanationGroup.SetActive(false));
     }
 
     private void PlaySlideButtonSE()
