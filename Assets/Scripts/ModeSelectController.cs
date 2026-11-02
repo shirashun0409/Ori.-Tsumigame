@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using DG.Tweening;
 
 public class ModeSelectController : MonoBehaviour
@@ -21,6 +22,16 @@ public class ModeSelectController : MonoBehaviour
         jukugoButton.SetActive(true);
         busyuButton.SetActive(true);
         yomiButton.SetActive(true);
+        TMP_Text testModeLabel = yomiButton.GetComponentInChildren<TMP_Text>(true);
+        if (testModeLabel != null)
+        {
+            testModeLabel.text = "テスト対策";
+            testModeLabel.enableAutoSizing = true;
+            testModeLabel.fontSize = 48f;
+            testModeLabel.fontSizeMin = 24f;
+            testModeLabel.fontSizeMax = 48f;
+            testModeLabel.textWrappingMode = TextWrappingModes.NoWrap;
+        }
 
         // ボタン背景を不透明度100%にし、子ラベルとクリック判定を維持する。
         Image radicalButtonImage = busyuButton.GetComponent<Image>();

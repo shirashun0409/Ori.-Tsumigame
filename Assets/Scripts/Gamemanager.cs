@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
 using DG.Tweening;
+using System.Linq;
 
 
 public class GameManager : MonoBehaviour
@@ -298,9 +299,9 @@ public class GameManager : MonoBehaviour
                     0
                 );
 
-            nextDisplay.SetNextSprites(
-                nextCapsule.GetLeftSprite(),
-                nextCapsule.GetRightSprite()
+            nextDisplay.SetNextKanji(
+                nextCapsule.nextLeftKanji,
+                nextCapsule.nextRightKanji
             );
         }
 
@@ -349,9 +350,9 @@ public class GameManager : MonoBehaviour
             );
 
 
-        nextDisplay.SetNextSprites(
-            nextCapsule.GetLeftSprite(),
-            nextCapsule.GetRightSprite()
+        nextDisplay.SetNextKanji(
+            nextCapsule.nextLeftKanji,
+            nextCapsule.nextRightKanji
         );
     }
 
@@ -466,6 +467,128 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void OnTestPreparationCleared(
+        List<KanjiData> clearedKanji,
+        List<TestPreparationWord> clearedWords,
+        TestPreparationClearType clearType)
+    {
+        var readings = new List<string>();
+        var displayTerms = new List<string>();
+        var studyDetails = new List<string>();
+        var seenKanji = new HashSet<string>();
+        var representedKanji = new HashSet<string>();
+        var seenWords = new HashSet<string>();
+        string clearTypeLabel = BuildTestPreparationClearTypeLabel(clearType);
+
+        foreach (TestPreparationWord word in clearedWords)
+        {
+            if (word == null || !seenWords.Add(word.Surface))
+                continue;
+
+            readings.Add(word.Reading);
+            displayTerms.Add(word.Surface);
+            foreach (char character in word.KanjiSequence)
+                representedKanji.Add(character.ToString());
+
+            if (!string.IsNullOrEmpty(word.Okurigana))
+            {
+                studyDetails.Add(
+                    $"{word.Surface}（読み：{word.Reading}）\n送り仮名：{word.Okurigana}");
+            }
+        }
+
+        IReadOnlyList<TestPreparationWord> selectedWords =
+            TestPreparationData.GetSelectedWords();
+        foreach (KanjiData data in clearedKanji)
+        {
+            if (data == null || !seenKanji.Add(data.kanji))
+                continue;
+
+            string reading = data.readings != null && data.readings.Length > 0
+                ? string.Join("・", data.readings)
+                : "未登録";
+            if (!representedKanji.Contains(data.kanji))
+                readings.Add(reading);
+
+            List<string> examples = selectedWords
+                .Where(word => word.KanjiSequence.Contains(data.kanji))
+                .Select(word => word.Surface + "（" + word.Reading + "）")
+                .Distinct()
+                .Take(2)
+                .ToList();
+            List<string> okurigana = selectedWords
+                .Where(word => word.KanjiSequence.Contains(data.kanji) &&
+                               !string.IsNullOrEmpty(word.Okurigana))
+                .Select(word => word.Okurigana)
+                .Distinct()
+                .ToList();
+            studyDetails.Add(
+                $"{data.kanji}（読み：{reading}）\n" +
+                $"部首：{data.radical}　総画数：{data.strokeCount}画\n" +
+                "熟語・例文：" + (examples.Count > 0 ? string.Join("、", examples) : "該当語なし") +
+                (okurigana.Count > 0 ? "\n送り仮名：" + string.Join("、", okurigana) : string.Empty));
+            if (!representedKanji.Contains(data.kanji))
+                displayTerms.Add(data.kanji);
+        }
+
+        if (kanjiDisplay != null)
+            kanjiDisplay.SetIdioms(displayTerms.Distinct().ToList());
+
+        string readingText = clearTypeLabel +
+            (readings.Count > 0 ? "\n" + string.Join("　", readings.Distinct()) : string.Empty);
+        string studyText = clearTypeLabel + "\n\n" +
+            string.Join("\n\n", studyDetails.Distinct());
+        if (meaningDisplay != null)
+            meaningDisplay.SetMeaning(studyText);
+
+        if (BoardManager.Instance != null)
+        {
+            if (BoardManager.Instance.ReadingText != null)
+                BoardManager.Instance.ReadingText.text = readingText;
+            if (BoardManager.Instance.MeaningText != null)
+            {
+                BoardManager.Instance.MeaningText.enableAutoSizing = true;
+                BoardManager.Instance.MeaningText.fontSizeMin = 10f;
+                BoardManager.Instance.MeaningText.fontSizeMax =
+                    BoardManager.Instance.MeaningText.fontSize;
+                BoardManager.Instance.MeaningText.text = studyText;
+            }
+        }
+
+        if (meaningDisplay != null)
+        {
+            TMP_Text text = meaningDisplay.GetComponentInChildren<TMP_Text>(true);
+            if (text != null)
+            {
+                text.enableAutoSizing = true;
+                text.fontSizeMin = 10f;
+                text.fontSizeMax = text.fontSize;
+            }
+        }
+    }
+
+    private static string BuildTestPreparationClearTypeLabel(TestPreparationClearType clearType)
+    {
+        var labels = new List<string>();
+        AddClearTypeLabel(labels, clearType, TestPreparationClearType.Idiom, "熟語", "#A65D4D");
+        AddClearTypeLabel(labels, clearType, TestPreparationClearType.SameKanji, "同じ漢字", "#607D78");
+        AddClearTypeLabel(labels, clearType, TestPreparationClearType.SameStrokeCount, "同じ画数", "#8A7547");
+        AddClearTypeLabel(labels, clearType, TestPreparationClearType.Okurigana, "送り仮名", "#65728A");
+        AddClearTypeLabel(labels, clearType, TestPreparationClearType.StandaloneKanji, "一字漢字", "#8C6D59");
+        return "<b>消去条件：</b>" + string.Join("　", labels);
+    }
+
+    private static void AddClearTypeLabel(
+        List<string> labels,
+        TestPreparationClearType clearType,
+        TestPreparationClearType flag,
+        string label,
+        string color)
+    {
+        if ((clearType & flag) != 0)
+            labels.Add($"<color={color}>【{label}】</color>");
+    }
+
     //==================================================
     // ゲームモード
     //==================================================
@@ -506,6 +629,11 @@ public class GameManager : MonoBehaviour
     {
         return currentMode ==
                GameMode.Reading;
+    }
+
+    public bool IsTestPreparationMode()
+    {
+        return currentMode == GameMode.TestPreparation;
     }
 
 

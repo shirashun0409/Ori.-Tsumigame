@@ -313,7 +313,8 @@ public class Capsule : MonoBehaviour
         GameManager.Instance.PlaySE(GameManager.Instance.dropSE);
 
         if (GameManager.Instance.IsIdiomMode() ||
-            GameManager.Instance.IsRadicalMode())
+            GameManager.Instance.IsRadicalMode() ||
+            GameManager.Instance.IsTestPreparationMode())
         {
             BoardManager.Instance.StartChain();
             StartCoroutine(WaitForChainAndSpawn());

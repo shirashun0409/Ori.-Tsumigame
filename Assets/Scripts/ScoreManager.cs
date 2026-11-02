@@ -7,6 +7,7 @@ public class ScoreManager : MonoBehaviour
     private const int HighScoreEffectThreshold = 500;
     private const int RadicalKanjiScore = 200;
     private const int RadicalSimultaneousBonus = 50;
+    private const int TestPreparationOkuriganaBonus = 1000;
 
     public static ScoreManager Instance;
 
@@ -120,6 +121,23 @@ public class ScoreManager : MonoBehaviour
             RadicalKanjiScore,
             0,
             simultaneousScore);
+    }
+
+    public void AddTestScore(
+        int kanjiCount,
+        int wordCount,
+        int matchedGroupCount,
+        int okuriganaCount)
+    {
+        int wordBonus = Mathf.Max(0, wordCount) * jukugoBonus;
+        int groupBonus = Mathf.Max(0, matchedGroupCount - wordCount) * simultaneousBonus;
+        int okuriganaBonus = Mathf.Max(0, okuriganaCount) * TestPreparationOkuriganaBonus;
+
+        AddScoreInternal(
+            kanjiCount,
+            kanjiScore,
+            wordBonus,
+            groupBonus + okuriganaBonus);
     }
 
     private void AddScoreInternal(

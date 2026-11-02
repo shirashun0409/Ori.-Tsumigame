@@ -5,12 +5,14 @@ using UnityEngine.SceneManagement;
 using DG.Tweening;
 using TMPro;
 using UnityEngine.UI;
+using System.Linq;
 
 public class StartSceneManager : MonoBehaviour
 {
     [Header("画面")]
     [SerializeField] private GameObject modeSelectGroup;
     [SerializeField] private GameObject explanationGroup;
+    [SerializeField] private TMP_FontAsset testRangeFont;
 
     [Header("モード選択")]
     [SerializeField] private ModeSelectController modeSelectController;
@@ -39,6 +41,8 @@ public class StartSceneManager : MonoBehaviour
     private int controllerSlideDirection;
     private static bool hasShownSlideHint = false;
     private static bool hasViewedIdiomExplanation = false;
+    private GameObject testRangeSelector;
+    private TMP_Text testRangeStatusText;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetSessionState()
@@ -50,6 +54,7 @@ public class StartSceneManager : MonoBehaviour
     {
         SetupHelpButton();
         SetupModoruButton();
+        SetupTestPreparationButton();
 
         if (modeSelectController != null)
         {
@@ -64,6 +69,246 @@ public class StartSceneManager : MonoBehaviour
             );
         }
     }
+
+    private void SetupTestPreparationButton()
+        {
+            if (modeSelectController == null)
+                return;
+
+            GameObject testButton = FindGameObjectIncludingInactive("YomiButton");
+            if (testButton == null)
+            {
+                Debug.LogError("StartSceneManager: YomiButton was not found in the StartScene.", this);
+                return;
+            }
+
+            Button button = testButton.GetComponent<Button>();
+            if (button == null)
+            {
+                Debug.LogError("StartSceneManager: YomiButton requires a Button.", testButton);
+                return;
+            }
+
+            TMP_Text label = testButton.GetComponentInChildren<TMP_Text>(true);
+            if (label != null)
+            {
+                if (testRangeFont != null)
+                    label.font = testRangeFont;
+                label.text = "テスト対策";
+            }
+
+            button.onClick.AddListener(SelectTestPreparationMode);
+        }
+
+        public void SelectTestPreparationMode()
+        {
+            PlayModeSelectionSE();
+            GameModeData.SelectedMode = GameMode.TestPreparation;
+
+            if (testRangeSelector == null)
+            {
+                Canvas canvas = modeSelectGroup != null
+                    ? modeSelectGroup.GetComponentInParent<Canvas>()
+                    : FindAnyObjectByType<Canvas>();
+                if (canvas == null)
+                {
+                    Debug.LogError("StartSceneManager: テスト範囲選択を表示するCanvasがありません。", this);
+                    return;
+                }
+                testRangeSelector = CreateTestRangeSelector(canvas.transform);
+            }
+
+            testRangeSelector.SetActive(true);
+            RefreshTestRangeButtons();
+        }
+
+        private GameObject CreateTestRangeSelector(Transform parent)
+        {
+            GameObject overlay = new GameObject(
+                "TestPreparationRangeSelector",
+                typeof(RectTransform),
+                typeof(Image));
+            overlay.transform.SetParent(parent, false);
+            overlay.layer = parent.gameObject.layer;
+
+            RectTransform overlayRect = overlay.GetComponent<RectTransform>();
+            overlayRect.anchorMin = Vector2.zero;
+            overlayRect.anchorMax = Vector2.one;
+            overlayRect.offsetMin = Vector2.zero;
+            overlayRect.offsetMax = Vector2.zero;
+            Image overlayImage = overlay.GetComponent<Image>();
+            overlayImage.color = new Color(0f, 0f, 0f, 0.45f);
+            overlayImage.raycastTarget = true;
+
+            GameObject panel = new GameObject("Panel", typeof(RectTransform), typeof(Image));
+            panel.transform.SetParent(overlay.transform, false);
+            panel.layer = overlay.layer;
+            RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRect.anchorMin = new Vector2(0.5f, 0.5f);
+            panelRect.anchorMax = new Vector2(0.5f, 0.5f);
+            panelRect.pivot = new Vector2(0.5f, 0.5f);
+            panelRect.anchoredPosition = Vector2.zero;
+            panelRect.sizeDelta = new Vector2(1120f, 680f);
+
+            Image panelImage = panel.GetComponent<Image>();
+            panelImage.color = new Color(0.08f, 0.07f, 0.06f, 0.96f);
+
+            CreateRangeLabel(panel.transform, "テスト範囲を選択（複数選択可）", 34f, new Vector2(0f, 270f), new Vector2(1020f, 66f));
+            testRangeStatusText = CreateRangeLabel(
+                panel.transform,
+                string.Empty,
+                20f,
+                new Vector2(0f, -180f),
+                new Vector2(1020f, 38f));
+
+            for (int i = 0; i < 9; i++)
+            {
+                int range = 22 + i;
+                int column = i % 3;
+                int row = i / 3;
+                Button rangeButton = CreateRangeButton(
+                    panel.transform,
+                    range.ToString(),
+                    new Vector2((column - 1) * 280f, 155f - row * 105f),
+                    new Vector2(240f, 76f));
+                rangeButton.onClick.AddListener(() => ToggleTestRange(range));
+            }
+
+            Button selectAll = CreateRangeButton(panel.transform, "全選択", new Vector2(-385f, -280f), new Vector2(180f, 62f));
+            selectAll.onClick.AddListener(SelectAllTestRanges);
+            Button clearAll = CreateRangeButton(panel.transform, "全解除", new Vector2(-130f, -280f), new Vector2(180f, 62f));
+            clearAll.onClick.AddListener(ClearTestRanges);
+            Button startButton = CreateRangeButton(panel.transform, "開始", new Vector2(130f, -280f), new Vector2(180f, 62f));
+            startButton.onClick.AddListener(StartSelectedTestGame);
+            Button cancelButton = CreateRangeButton(panel.transform, "戻る", new Vector2(385f, -280f), new Vector2(170f, 62f));
+            cancelButton.onClick.AddListener(() => overlay.SetActive(false));
+
+            return overlay;
+        }
+
+        private Button CreateRangeButton(Transform parent, string label, Vector2 position, Vector2 size)
+        {
+            GameObject buttonObject = new GameObject(label, typeof(RectTransform), typeof(Image), typeof(Button));
+            buttonObject.transform.SetParent(parent, false);
+            buttonObject.layer = parent.gameObject.layer;
+
+            RectTransform rect = buttonObject.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+
+            Image image = buttonObject.GetComponent<Image>();
+            image.color = new Color(0.32f, 0.26f, 0.19f, 1f);
+
+            Button button = buttonObject.GetComponent<Button>();
+            button.targetGraphic = image;
+            button.transition = Selectable.Transition.ColorTint;
+            button.colors = new ColorBlock
+            {
+                normalColor = image.color,
+                highlightedColor = new Color(0.55f, 0.44f, 0.29f, 1f),
+                pressedColor = new Color(0.75f, 0.62f, 0.4f, 1f),
+                selectedColor = image.color,
+                disabledColor = new Color(0.2f, 0.18f, 0.15f, 0.7f),
+                colorMultiplier = 1f,
+                fadeDuration = 0.1f
+            };
+            CreateRangeLabel(buttonObject.transform, label, 26f, Vector2.zero, size);
+            return button;
+        }
+
+        private TMP_Text CreateRangeLabel(Transform parent, string label, float fontSize, Vector2 position, Vector2 size)
+        {
+            GameObject textObject = new GameObject(label + "Label", typeof(RectTransform), typeof(TextMeshProUGUI));
+            textObject.transform.SetParent(parent, false);
+            textObject.layer = parent.gameObject.layer;
+
+            RectTransform rect = textObject.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+
+            TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
+            text.font = testRangeFont != null ? testRangeFont : TMP_Settings.defaultFontAsset;
+            text.fontSize = fontSize;
+            text.color = Color.white;
+            text.alignment = TextAlignmentOptions.Center;
+            text.raycastTarget = false;
+            text.text = label;
+            return text;
+        }
+
+        private void ToggleTestRange(int range)
+        {
+            if (!GameModeData.SelectedTestRanges.Add(range))
+                GameModeData.SelectedTestRanges.Remove(range);
+            RefreshTestRangeButtons();
+        }
+
+        private void SelectAllTestRanges()
+        {
+            GameModeData.SelectedTestRanges.Clear();
+            for (int range = 22; range <= 30; range++)
+                GameModeData.SelectedTestRanges.Add(range);
+            RefreshTestRangeButtons();
+        }
+
+        private void ClearTestRanges()
+        {
+            GameModeData.SelectedTestRanges.Clear();
+            RefreshTestRangeButtons();
+        }
+
+        private void RefreshTestRangeButtons()
+        {
+            if (testRangeSelector == null)
+                return;
+
+            for (int range = 22; range <= 30; range++)
+            {
+                Transform rangeButton = testRangeSelector.transform.Find("Panel/" + range);
+                if (rangeButton == null)
+                    continue;
+
+                bool selected = GameModeData.SelectedTestRanges.Contains(range);
+                Color buttonColor = selected
+                    ? new Color(0.45f, 0.34f, 0.2f, 1f)
+                    : new Color(0.2f, 0.18f, 0.15f, 1f);
+                rangeButton.GetComponent<Image>().color = buttonColor;
+                ColorBlock colors = rangeButton.GetComponent<Button>().colors;
+                colors.normalColor = buttonColor;
+                colors.selectedColor = buttonColor;
+                rangeButton.GetComponent<Button>().colors = colors;
+                TMP_Text label = rangeButton.GetComponentInChildren<TMP_Text>();
+                if (label != null)
+                    label.text = selected ? range + " ✓" : range.ToString();
+            }
+
+            if (testRangeStatusText != null)
+            {
+                testRangeStatusText.text = GameModeData.SelectedTestRanges.Count == 0
+                    ? "範囲を1つ以上選択してください"
+                    : "選択中：" + string.Join("、", GameModeData.SelectedTestRanges.OrderBy(range => range));
+            }
+        }
+
+    private void StartSelectedTestGame()
+        {
+            if (GameModeData.SelectedTestRanges.Count == 0)
+            {
+                Debug.LogWarning("StartSceneManager: テスト範囲を1つ以上選択してください。", this);
+                return;
+            }
+
+            if (testRangeSelector != null)
+                testRangeSelector.SetActive(false);
+            GameModeData.SelectedMode = GameMode.TestPreparation;
+            StartGame();
+        }
 
     private void SetupHelpButton()
     {

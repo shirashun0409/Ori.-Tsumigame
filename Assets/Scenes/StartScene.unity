@@ -771,10 +771,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u8AAD\u307F"
+  m_text: "\u30C6\u30B9\u30C8\u5BFE\u7B56"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 171cfb7912dfd96439479693bb641a92, type: 2}
-  m_sharedMaterial: {fileID: -780354099304094719, guid: 171cfb7912dfd96439479693bb641a92, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: d4aaa08b71d59274fa4b63e694372e3e, type: 2}
+  m_sharedMaterial: {fileID: 5999717659375572865, guid: d4aaa08b71d59274fa4b63e694372e3e, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2060,6 +2060,7 @@ MonoBehaviour:
   slideGuide: {fileID: 0}
   leftArrow: {fileID: 1640095269}
   rightArrow: {fileID: 827656144}
+  testRangeFont: {fileID: 11400000, guid: d4aaa08b71d59274fa4b63e694372e3e, type: 2}
   modeSelectionSoundGroupIndex: 0
   slideButtonSoundGroupIndex: 1
 --- !u!4 &759176743

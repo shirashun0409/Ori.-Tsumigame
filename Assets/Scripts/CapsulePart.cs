@@ -1,4 +1,5 @@
 using UnityEngine;
+using TMPro;
 
 public class CapsulePart : MonoBehaviour
 {
@@ -15,6 +16,7 @@ public class CapsulePart : MonoBehaviour
     private SpriteRenderer spriteRenderer;
     private KanjiData kanjiData;
     private Color defaultColor;
+    private TextMeshPro fallbackLabel;
 
 
     public string Kanji
@@ -49,8 +51,34 @@ public class CapsulePart : MonoBehaviour
 
         kanjiData = data;
 
-        spriteRenderer.sprite =
-            data.sprite;
+        if (data.sprite == null)
+        {
+            spriteRenderer.enabled = false;
+            if (fallbackLabel == null)
+            {
+                GameObject labelObject = new GameObject("KanjiFallback", typeof(TextMeshPro));
+                labelObject.transform.SetParent(transform, false);
+                labelObject.transform.localPosition = Vector3.zero;
+                labelObject.transform.localScale = Vector3.one * 0.2f;
+                fallbackLabel = labelObject.GetComponent<TextMeshPro>();
+                TMP_Text existingText = FindAnyObjectByType<TMP_Text>();
+                if (existingText != null)
+                    fallbackLabel.font = existingText.font;
+                fallbackLabel.fontSize = 4.5f;
+                fallbackLabel.alignment = TextAlignmentOptions.Center;
+                fallbackLabel.color = Color.white;
+                fallbackLabel.rectTransform.sizeDelta = new Vector2(5f, 5f);
+                labelObject.GetComponent<MeshRenderer>().sortingOrder = 2;
+            }
+            fallbackLabel.text = data.kanji;
+        }
+        else
+        {
+            if (fallbackLabel != null)
+                fallbackLabel.gameObject.SetActive(false);
+            spriteRenderer.enabled = true;
+            spriteRenderer.sprite = data.sprite;
+        }
         if (GameModeData.SelectedMode == GameMode.Idiom)
         {
             spriteRenderer.color = IdiomColor;

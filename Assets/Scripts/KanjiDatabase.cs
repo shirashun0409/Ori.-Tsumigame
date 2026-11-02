@@ -1,6 +1,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 /// <summary>
@@ -26,6 +27,7 @@ public static class KanjiDatabase
     private static KanjiData[] radicalKanjiList;
     private static Dictionary<string, KanjiData> byKanji;
     private static GameMode? initializedMode;
+    private static string initializedTestRangeSignature;
     private static string[] selectedRadicals = Array.Empty<string>();
     private static string[] previousRadicals = Array.Empty<string>();
 
@@ -405,10 +407,27 @@ public static class KanjiDatabase
     private static void EnsureInitialized()
     {
         GameMode mode = GameModeData.SelectedMode;
+        string testRangeSignature = mode == GameMode.TestPreparation
+            ? string.Join(",", GameModeData.SelectedTestRanges.OrderBy(range => range))
+            : string.Empty;
 
         // モードが変わっていなければ、初期化を繰り返さない
-        if (kanjiList != null && initializedMode == mode)
+        if (kanjiList != null &&
+            initializedMode == mode &&
+            (mode != GameMode.TestPreparation ||
+             initializedTestRangeSignature == testRangeSignature))
         {
+            return;
+        }
+
+        if (mode == GameMode.TestPreparation)
+        {
+            kanjiList = TestPreparationData.BuildSelectedKanji();
+            byKanji = kanjiList.ToDictionary(data => data.kanji);
+            radicalKanjiList = null;
+            initializedMode = mode;
+            initializedTestRangeSignature = testRangeSignature;
+            Debug.Log($"テスト対策モード：使用できる漢字は{kanjiList.Length}個です。");
             return;
         }
 
@@ -460,6 +479,7 @@ public static class KanjiDatabase
             ? kanjiList
             : null;
         initializedMode = mode;
+        initializedTestRangeSignature = string.Empty;
 
         Debug.Log(
             $"{mode}モード：使用できる漢字は{kanjiList.Length}個です。");
@@ -474,6 +494,9 @@ public static class KanjiDatabase
 
             case GameMode.Idiom:
                 return "KanjiSprites/Idiom/";
+
+            case GameMode.TestPreparation:
+                return "KanjiSprites/Test/";
 
             case GameMode.Reading:
             default:

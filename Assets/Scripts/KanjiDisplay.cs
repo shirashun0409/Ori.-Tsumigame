@@ -58,6 +58,13 @@ public class KanjiDisplay : MonoBehaviour
         {
             idiomText.fontSize = multipleFontSize;
         }
+
+        if (GameModeData.SelectedMode == GameMode.TestPreparation)
+        {
+            idiomText.enableAutoSizing = true;
+            idiomText.fontSizeMin = 16f;
+            idiomText.fontSizeMax = idiomText.fontSize;
+        }
     }
 
     public void SetRadicals(List<KanjiData> radicals)
