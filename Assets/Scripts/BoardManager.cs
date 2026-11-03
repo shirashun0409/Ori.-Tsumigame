@@ -5,6 +5,7 @@ using DG.Tweening;
 using TMPro;
 using UnityEngine.UI;
 using System.Linq;
+using UnityEngine.InputSystem;
 
 public class BoardManager : MonoBehaviour
 {
@@ -19,6 +20,8 @@ public class BoardManager : MonoBehaviour
     private MaterialPropertyBlock clearEffectProperties;
     private CapsulePart lastPlacedLeftPart;
     private CapsulePart lastPlacedRightPart;
+    private Coroutine clearVibrationCoroutine;
+    private Gamepad vibratingGamepad;
     private int clearChainLevel = 1;
     private readonly Dictionary<Vector2Int, TestOkuriganaAnchor> testOkuriganaAnchors =
         new Dictionary<Vector2Int, TestOkuriganaAnchor>();
@@ -99,8 +102,15 @@ public class BoardManager : MonoBehaviour
 
     private void OnDestroy()
     {
+        StopClearVibration();
+
         if (goldKanaMaterial != null)
             Destroy(goldKanaMaterial);
+    }
+
+    private void OnDisable()
+    {
+        StopClearVibration();
     }
 
 
@@ -339,6 +349,8 @@ public class BoardManager : MonoBehaviour
         if (part == null)
             return;
 
+        PlayClearVibration();
+
         board[x, y] = null;
 
         PlayClearBurstEffect(part.transform.position);
@@ -355,6 +367,45 @@ public class BoardManager : MonoBehaviour
             part.gameObject,
             0.15f
         );
+    }
+
+    private void PlayClearVibration()
+    {
+        Gamepad gamepad = Gamepad.current;
+        if (gamepad == null)
+            return;
+
+        StopClearVibration();
+        vibratingGamepad = gamepad;
+        gamepad.SetMotorSpeeds(0.2f, 0.2f);
+        clearVibrationCoroutine = StartCoroutine(StopClearVibrationAfterDelay(gamepad));
+    }
+
+    private IEnumerator StopClearVibrationAfterDelay(Gamepad gamepad)
+    {
+        yield return new WaitForSecondsRealtime(0.12f);
+
+        if (vibratingGamepad == gamepad)
+        {
+            gamepad.SetMotorSpeeds(0f, 0f);
+            vibratingGamepad = null;
+            clearVibrationCoroutine = null;
+        }
+    }
+
+    private void StopClearVibration()
+    {
+        if (clearVibrationCoroutine != null)
+        {
+            StopCoroutine(clearVibrationCoroutine);
+            clearVibrationCoroutine = null;
+        }
+
+        if (vibratingGamepad != null)
+        {
+            vibratingGamepad.SetMotorSpeeds(0f, 0f);
+            vibratingGamepad = null;
+        }
     }
 
     private void ConfigureClearBurstEffect()
