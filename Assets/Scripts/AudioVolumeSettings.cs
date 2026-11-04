@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -107,5 +108,24 @@ public static class AudioVolumeSettings
     {
         float volume = entry.isBgm ? BgmVolume : SeVolume;
         entry.source.volume = entry.baseVolume * volume * entry.fade;
+    }
+}
+
+public static class VibrationSettings
+{
+    private const string PreferenceKey = "GameSettings.VibrationEnabled";
+
+    public static event Action<bool> SettingChanged;
+
+    public static bool IsEnabled => PlayerPrefs.GetInt(PreferenceKey, 1) != 0;
+
+    public static void SetEnabled(bool isEnabled)
+    {
+        if (IsEnabled == isEnabled)
+            return;
+
+        PlayerPrefs.SetInt(PreferenceKey, isEnabled ? 1 : 0);
+        PlayerPrefs.Save();
+        SettingChanged?.Invoke(isEnabled);
     }
 }

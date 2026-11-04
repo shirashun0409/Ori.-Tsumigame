@@ -469,8 +469,7 @@ public class GameManager : MonoBehaviour
 
     public void OnTestPreparationCleared(
         List<KanjiData> clearedKanji,
-        List<TestPreparationWord> clearedWords,
-        TestPreparationClearType clearType)
+        List<TestPreparationWord> clearedWords)
     {
         var readings = new List<string>();
         var displayTerms = new List<string>();
@@ -478,8 +477,6 @@ public class GameManager : MonoBehaviour
         var seenKanji = new HashSet<string>();
         var representedKanji = new HashSet<string>();
         var seenWords = new HashSet<string>();
-        string clearTypeLabel = BuildTestPreparationClearTypeLabel(clearType);
-
         foreach (TestPreparationWord word in clearedWords)
         {
             if (word == null || !seenWords.Add(word.Surface))
@@ -534,10 +531,8 @@ public class GameManager : MonoBehaviour
         if (kanjiDisplay != null)
             kanjiDisplay.SetIdioms(displayTerms.Distinct().ToList());
 
-        string readingText = clearTypeLabel +
-            (readings.Count > 0 ? "\n" + string.Join("　", readings.Distinct()) : string.Empty);
-        string studyText = clearTypeLabel + "\n\n" +
-            string.Join("\n\n", studyDetails.Distinct());
+        string readingText = string.Join("　", readings.Distinct());
+        string studyText = string.Join("\n\n", studyDetails.Distinct());
         if (meaningDisplay != null)
             meaningDisplay.SetMeaning(studyText);
 
@@ -565,28 +560,6 @@ public class GameManager : MonoBehaviour
                 text.fontSizeMax = text.fontSize;
             }
         }
-    }
-
-    private static string BuildTestPreparationClearTypeLabel(TestPreparationClearType clearType)
-    {
-        var labels = new List<string>();
-        AddClearTypeLabel(labels, clearType, TestPreparationClearType.Idiom, "熟語", "#A65D4D");
-        AddClearTypeLabel(labels, clearType, TestPreparationClearType.SameKanji, "同じ漢字", "#607D78");
-        AddClearTypeLabel(labels, clearType, TestPreparationClearType.SameStrokeCount, "同じ画数", "#8A7547");
-        AddClearTypeLabel(labels, clearType, TestPreparationClearType.Okurigana, "送り仮名", "#65728A");
-        AddClearTypeLabel(labels, clearType, TestPreparationClearType.StandaloneKanji, "一字漢字", "#8C6D59");
-        return "<b>消去条件：</b>" + string.Join("　", labels);
-    }
-
-    private static void AddClearTypeLabel(
-        List<string> labels,
-        TestPreparationClearType clearType,
-        TestPreparationClearType flag,
-        string label,
-        string color)
-    {
-        if ((clearType & flag) != 0)
-            labels.Add($"<color={color}>【{label}】</color>");
     }
 
     //==================================================

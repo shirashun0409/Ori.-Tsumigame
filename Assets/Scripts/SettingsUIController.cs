@@ -9,22 +9,33 @@ public class SettingsUIController : MonoBehaviour
 {
     private const float AnimationDuration = 0.24f;
     private const float DimmerAlpha = 0.52f;
+    private const float RightPanelX = 1590f;
+    private const string SidePreferenceKey = "GameSettings.SettingsPanelSide";
     private static readonly Color TrackColor = new Color32(57, 64, 72, 255);
     private static readonly Color FillColor = new Color32(167, 167, 122, 255);
     private static readonly Color SelectedLineColor = new Color32(184, 184, 145, 255);
-    private static readonly Color HandleColor = new Color32(184, 190, 198, 255);
+    private static readonly Color OffSelectedColor = new Color32(89, 143, 191, 255);
+    private static readonly Color OnSelectedColor = new Color32(226, 205, 112, 255);
+    private static readonly Color HandleColor = new Color32(248, 249, 250, 255);
+    private static Sprite roundedTrackSprite;
+    private static Sprite roundHandleSprite;
 
     private RectTransform panel;
     private CanvasGroup panelCanvasGroup;
     private Image dimmer;
     private Slider bgmSlider;
     private Slider seSlider;
+    private Toggle vibrationToggle;
+    private Toggle sideToggle;
+    private TMP_Text sideValueText;
     private TMP_Text bgmValueText;
     private TMP_Text seValueText;
+    private Vector2 leftOpenPosition;
     private Vector2 openPosition;
     private Coroutine animationRoutine;
     private GameObject previouslySelected;
     private bool isOpen;
+    private bool isRightSide;
 
     private void Awake()
     {
@@ -48,10 +59,14 @@ public class SettingsUIController : MonoBehaviour
             return;
         }
 
+        isRightSide = PlayerPrefs.GetInt(SidePreferenceKey, 0) != 0;
         SetupVolumeControl("BGM", AudioVolumeSettings.BgmVolume, out bgmSlider, out bgmValueText);
         SetupVolumeControl("効果音", AudioVolumeSettings.SeVolume, out seSlider, out seValueText);
+        SetupSideControl();
+        SetupVibrationControl();
 
-        openPosition = panel.anchoredPosition;
+        leftOpenPosition = panel.anchoredPosition;
+        openPosition = GetOpenPosition();
         panel.anchoredPosition = GetClosedPosition();
         panelCanvasGroup.interactable = false;
         panelCanvasGroup.blocksRaycasts = false;
@@ -64,6 +79,14 @@ public class SettingsUIController : MonoBehaviour
         if (paused)
         {
             PlayerPrefs.Save();
+        }
+    }
+
+    private static void PlaySwitchSound()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.PlaySE(GameManager.Instance.dropSE);
         }
     }
 
@@ -234,6 +257,301 @@ public class SettingsUIController : MonoBehaviour
         slider.onValueChanged.AddListener(labelText == "BGM" ? SetBgmVolume : SetSeVolume);
         ApplySliderStyle(slider);
         UpdateValueText(slider, valueText);
+    }
+
+    private void SetupVibrationControl()
+    {
+        TMP_Text label = FindVibrationLabel();
+        if (label == null)
+        {
+            Debug.LogWarning("SettingsUIController: Could not find the existing vibration label in SettingsPanel.", this);
+            return;
+        }
+
+        Transform existingToggle = transform.Find("VibrationToggle");
+        vibrationToggle = existingToggle != null
+            ? existingToggle.GetComponent<Toggle>()
+            : CreateVibrationToggle(label);
+        if (vibrationToggle == null)
+        {
+            Debug.LogError("SettingsUIController: Could not create the vibration toggle.", this);
+            enabled = false;
+            return;
+        }
+
+        vibrationToggle.SetIsOnWithoutNotify(VibrationSettings.IsEnabled);
+        vibrationToggle.onValueChanged.RemoveListener(SetVibrationEnabled);
+        vibrationToggle.onValueChanged.AddListener(SetVibrationEnabled);
+        UpdateVibrationToggleVisual(VibrationSettings.IsEnabled);
+    }
+
+    private void SetupSideControl()
+    {
+        TMP_Text label = FindSideLabel();
+        if (label == null)
+        {
+            Debug.LogError("SettingsUIController: Could not find the existing left/right label in SettingsPanel.", this);
+            enabled = false;
+            return;
+        }
+
+        sideValueText = FindSideValueText(label);
+        Transform existingToggle = transform.Find("SettingsSideToggle");
+        sideToggle = existingToggle != null
+            ? existingToggle.GetComponent<Toggle>()
+            : CreateSwitchToggle("SettingsSideToggle", label);
+        if (sideToggle == null)
+        {
+            Debug.LogError("SettingsUIController: Could not create the settings side toggle.", this);
+            enabled = false;
+            return;
+        }
+
+        sideToggle.SetIsOnWithoutNotify(isRightSide);
+        sideToggle.onValueChanged.RemoveListener(SetSettingsPanelOnRight);
+        sideToggle.onValueChanged.AddListener(SetSettingsPanelOnRight);
+        UpdateSideValueText(isRightSide);
+        UpdateSwitchToggleVisual(sideToggle, isRightSide);
+    }
+
+    private TMP_Text FindSideValueText(TMP_Text label)
+    {
+        TMP_Text[] texts = label.transform.parent.GetComponentsInChildren<TMP_Text>(true);
+        for (int i = 0; i < texts.Length; i++)
+        {
+            if (texts[i] != label &&
+                (texts[i].gameObject.name == "moji" ||
+                 texts[i].text == "左" ||
+                 texts[i].text == "右"))
+            {
+                return texts[i];
+            }
+        }
+
+        return null;
+    }
+
+    private void UpdateSideValueText(bool onRight)
+    {
+        if (sideValueText != null)
+        {
+            sideValueText.text = onRight ? "右" : "左";
+        }
+    }
+
+    private TMP_Text FindSideLabel()
+    {
+        TMP_Text[] texts = GetComponentsInChildren<TMP_Text>(true);
+        for (int i = 0; i < texts.Length; i++)
+        {
+            if (texts[i].transform != transform &&
+                (texts[i].text.Contains("左右") || texts[i].gameObject.name == "leftright"))
+            {
+                return texts[i];
+            }
+        }
+
+        return null;
+    }
+
+    private TMP_Text FindVibrationLabel()
+    {
+        Transform[] transforms = GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < transforms.Length; i++)
+        {
+            if (transforms[i] != transform &&
+                (transforms[i].name.Contains("sindou") || transforms[i].name.Contains("振動")))
+            {
+                TMP_Text groupLabel = transforms[i].GetComponentInChildren<TMP_Text>(true);
+                if (groupLabel != null)
+                {
+                    return groupLabel;
+                }
+            }
+        }
+
+        TMP_Text[] texts = GetComponentsInChildren<TMP_Text>(true);
+        for (int i = 0; i < texts.Length; i++)
+        {
+            if (texts[i].transform != transform &&
+                (texts[i].text.Contains("振") || texts[i].gameObject.name.Contains("振動")))
+            {
+                return texts[i];
+            }
+        }
+
+        return null;
+    }
+
+    private Toggle CreateVibrationToggle(TMP_Text label)
+    {
+        return CreateSwitchToggle("VibrationToggle", label);
+    }
+
+    private Toggle CreateSwitchToggle(string toggleName, TMP_Text label)
+    {
+        GameObject toggleObject = new GameObject(
+            toggleName,
+            typeof(RectTransform),
+            typeof(CanvasRenderer),
+            typeof(Image),
+            typeof(Toggle));
+        toggleObject.transform.SetParent(transform, false);
+
+        RectTransform rect = toggleObject.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.sizeDelta = new Vector2(78f, 38f);
+        Vector3 labelCenter = panel.InverseTransformPoint(
+            label.rectTransform.TransformPoint(label.rectTransform.rect.center));
+        float columnX = sideToggle != null
+            ? sideToggle.GetComponent<RectTransform>().anchoredPosition.x
+            : labelCenter.x + 175f;
+        rect.anchoredPosition = new Vector2(columnX, labelCenter.y);
+
+        Image track = toggleObject.GetComponent<Image>();
+        track.sprite = GetRoundedTrackSprite();
+        track.type = Image.Type.Sliced;
+        track.raycastTarget = true;
+
+        GameObject handleObject = new GameObject(
+            "Handle",
+            typeof(RectTransform),
+            typeof(CanvasRenderer),
+            typeof(Image));
+        handleObject.transform.SetParent(toggleObject.transform, false);
+        Image handle = handleObject.GetComponent<Image>();
+        handle.sprite = GetRoundHandleSprite();
+        handle.type = Image.Type.Simple;
+        handle.raycastTarget = false;
+
+        RectTransform handleRect = handle.rectTransform;
+        handleRect.anchorMin = new Vector2(0.5f, 0.5f);
+        handleRect.anchorMax = new Vector2(0.5f, 0.5f);
+        handleRect.sizeDelta = new Vector2(30f, 30f);
+
+        Toggle toggle = toggleObject.GetComponent<Toggle>();
+        toggle.targetGraphic = track;
+        toggle.graphic = handle;
+        toggle.transition = Selectable.Transition.ColorTint;
+        toggle.navigation = new Navigation { mode = Navigation.Mode.Automatic };
+        return toggle;
+    }
+
+    private void SetVibrationEnabled(bool isEnabled)
+    {
+        VibrationSettings.SetEnabled(isEnabled);
+        UpdateVibrationToggleVisual(isEnabled);
+        PlaySwitchSound();
+    }
+
+    private void UpdateVibrationToggleVisual(bool isEnabled)
+    {
+        UpdateSwitchToggleVisual(vibrationToggle, isEnabled);
+    }
+
+    private void UpdateSwitchToggleVisual(Toggle toggle, bool isOn)
+    {
+        if (toggle == null)
+            return;
+
+        Image handle = toggle.graphic as Image;
+        if (handle != null)
+        {
+            handle.color = HandleColor;
+            handle.rectTransform.anchoredPosition = new Vector2(isOn ? 18f : -18f, 0f);
+        }
+
+        ColorBlock colors = toggle.colors;
+        Color stateColor = isOn ? FillColor : TrackColor;
+        Color selectedColor = isOn ? OnSelectedColor : OffSelectedColor;
+        colors.normalColor = stateColor;
+        colors.highlightedColor = selectedColor;
+        colors.selectedColor = selectedColor;
+        colors.pressedColor = Color.Lerp(selectedColor, Color.white, 0.25f);
+        colors.disabledColor = TrackColor;
+        colors.colorMultiplier = 1f;
+        colors.fadeDuration = 0.08f;
+        toggle.colors = colors;
+        toggle.transition = Selectable.Transition.ColorTint;
+    }
+
+    private static Sprite GetRoundedTrackSprite()
+    {
+        if (roundedTrackSprite == null)
+        {
+            roundedTrackSprite = CreateRoundedSprite(32, 16, 8);
+        }
+
+        return roundedTrackSprite;
+    }
+
+    private static Sprite GetRoundHandleSprite()
+    {
+        if (roundHandleSprite == null)
+        {
+            roundHandleSprite = CreateRoundedSprite(16, 16, 8);
+        }
+
+        return roundHandleSprite;
+    }
+
+    private static Sprite CreateRoundedSprite(int width, int height, int radius)
+    {
+        Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false)
+        {
+            name = "SettingsSwitchSprite",
+            filterMode = FilterMode.Bilinear,
+            wrapMode = TextureWrapMode.Clamp,
+            hideFlags = HideFlags.HideAndDontSave
+        };
+
+        Color32[] pixels = new Color32[width * height];
+        float radiusSquared = radius * radius;
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                float nearestX = Mathf.Clamp(x + 0.5f, radius, width - radius);
+                float nearestY = Mathf.Clamp(y + 0.5f, radius, height - radius);
+                float dx = x + 0.5f - nearestX;
+                float dy = y + 0.5f - nearestY;
+                pixels[y * width + x] = dx * dx + dy * dy <= radiusSquared
+                    ? Color.white
+                    : Color.clear;
+            }
+        }
+
+        texture.SetPixels32(pixels);
+        texture.Apply();
+        return Sprite.Create(
+            texture,
+            new Rect(0f, 0f, width, height),
+            new Vector2(0.5f, 0.5f),
+            1f,
+            0,
+            SpriteMeshType.FullRect,
+            new Vector4(radius, radius, radius, radius));
+    }
+
+    private void SetSettingsPanelOnRight(bool onRight)
+    {
+        isRightSide = onRight;
+        PlayerPrefs.SetInt(SidePreferenceKey, onRight ? 1 : 0);
+        PlayerPrefs.Save();
+
+        openPosition = GetOpenPosition();
+        UpdateSideValueText(onRight);
+        UpdateSwitchToggleVisual(sideToggle, onRight);
+        PlaySwitchSound();
+        if (isOpen)
+        {
+            Animate(true);
+        }
+        else
+        {
+            panel.anchoredPosition = GetClosedPosition();
+        }
     }
 
     private TMP_Text FindLabel(string labelText)
@@ -441,7 +759,14 @@ public class SettingsUIController : MonoBehaviour
 
     private Vector2 GetClosedPosition()
     {
-        return openPosition + Vector2.left * panel.rect.width;
+        return openPosition + (isRightSide ? Vector2.right : Vector2.left) * panel.rect.width;
+    }
+
+    private Vector2 GetOpenPosition()
+    {
+        return isRightSide
+            ? new Vector2(RightPanelX, leftOpenPosition.y)
+            : leftOpenPosition;
     }
 
     private void SetBgmVolume(float volume)

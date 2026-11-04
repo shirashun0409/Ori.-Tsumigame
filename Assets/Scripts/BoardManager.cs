@@ -108,8 +108,14 @@ public class BoardManager : MonoBehaviour
             Destroy(goldKanaMaterial);
     }
 
+    private void OnEnable()
+    {
+        VibrationSettings.SettingChanged += OnVibrationSettingChanged;
+    }
+
     private void OnDisable()
     {
+        VibrationSettings.SettingChanged -= OnVibrationSettingChanged;
         StopClearVibration();
     }
 
@@ -371,6 +377,12 @@ public class BoardManager : MonoBehaviour
 
     private void PlayClearVibration()
     {
+        if (!VibrationSettings.IsEnabled)
+        {
+            StopClearVibration();
+            return;
+        }
+
         Gamepad gamepad = Gamepad.current;
         if (gamepad == null)
             return;
@@ -406,6 +418,12 @@ public class BoardManager : MonoBehaviour
             vibratingGamepad.SetMotorSpeeds(0f, 0f);
             vibratingGamepad = null;
         }
+    }
+
+    private void OnVibrationSettingChanged(bool isEnabled)
+    {
+        if (!isEnabled)
+            StopClearVibration();
     }
 
     private void ConfigureClearBurstEffect()
@@ -1156,8 +1174,7 @@ public class BoardManager : MonoBehaviour
 
                 gameManager.OnTestPreparationCleared(
                     clearedKanji,
-                    batch.Words,
-                    batch.ClearType);
+                    batch.Words);
 
                 GameManager.Instance.PlaySE(GameManager.Instance.comboSE);
                 foreach (Vector2Int position in batch.AnchorPositions)
