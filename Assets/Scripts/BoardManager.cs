@@ -6,6 +6,7 @@ using TMPro;
 using UnityEngine.UI;
 using System.Linq;
 using UnityEngine.InputSystem;
+using System.Runtime.InteropServices;
 
 public class BoardManager : MonoBehaviour
 {
@@ -383,26 +384,38 @@ public class BoardManager : MonoBehaviour
             return;
         }
 
+        StopClearVibration();
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        PlayBrowserControllerVibration(0.35f, 0.65f, 180);
+        clearVibrationCoroutine = StartCoroutine(StopClearVibrationAfterDelay(null));
+#else
         Gamepad gamepad = Gamepad.current;
         if (gamepad == null)
             return;
 
-        StopClearVibration();
         vibratingGamepad = gamepad;
-        gamepad.SetMotorSpeeds(0.2f, 0.2f);
+        gamepad.SetMotorSpeeds(0.35f, 0.65f);
         clearVibrationCoroutine = StartCoroutine(StopClearVibrationAfterDelay(gamepad));
+#endif
     }
 
     private IEnumerator StopClearVibrationAfterDelay(Gamepad gamepad)
     {
-        yield return new WaitForSecondsRealtime(0.12f);
+        yield return new WaitForSecondsRealtime(0.18f);
 
-        if (vibratingGamepad == gamepad)
+        if (gamepad != null && vibratingGamepad == gamepad)
         {
             gamepad.SetMotorSpeeds(0f, 0f);
             vibratingGamepad = null;
-            clearVibrationCoroutine = null;
         }
+#if UNITY_WEBGL && !UNITY_EDITOR
+        else if (gamepad == null)
+        {
+            StopBrowserControllerVibration();
+        }
+#endif
+        clearVibrationCoroutine = null;
     }
 
     private void StopClearVibration()
@@ -418,6 +431,10 @@ public class BoardManager : MonoBehaviour
             vibratingGamepad.SetMotorSpeeds(0f, 0f);
             vibratingGamepad = null;
         }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        StopBrowserControllerVibration();
+#endif
     }
 
     private void OnVibrationSettingChanged(bool isEnabled)
@@ -425,6 +442,17 @@ public class BoardManager : MonoBehaviour
         if (!isEnabled)
             StopClearVibration();
     }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+    [DllImport("__Internal")]
+    private static extern void PlayBrowserControllerVibration(
+        float weakMagnitude,
+        float strongMagnitude,
+        int durationMilliseconds);
+
+    [DllImport("__Internal")]
+    private static extern void StopBrowserControllerVibration();
+#endif
 
     private void ConfigureClearBurstEffect()
     {
