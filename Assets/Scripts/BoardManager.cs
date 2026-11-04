@@ -384,7 +384,8 @@ public class BoardManager : MonoBehaviour
             return;
         }
 
-        StopClearVibration();
+        if (clearVibrationCoroutine != null)
+            return;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         PlayBrowserControllerVibration(0.35f, 0.65f, 180);
