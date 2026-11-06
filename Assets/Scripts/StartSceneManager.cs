@@ -75,17 +75,20 @@ public class StartSceneManager : MonoBehaviour
             if (modeSelectController == null)
                 return;
 
-            GameObject testButton = FindGameObjectIncludingInactive("YomiButton");
+            GameObject testButton = FindGameObjectIncludingInactive("Testbutton");
+            if (testButton == null)
+                testButton = FindGameObjectIncludingInactive("TestButton");
+
             if (testButton == null)
             {
-                Debug.LogError("StartSceneManager: YomiButton was not found in the StartScene.", this);
+                Debug.LogError("StartSceneManager: Testbutton was not found in the StartScene.", this);
                 return;
             }
 
             Button button = testButton.GetComponent<Button>();
             if (button == null)
             {
-                Debug.LogError("StartSceneManager: YomiButton requires a Button.", testButton);
+                Debug.LogError("StartSceneManager: Testbutton requires a Button.", testButton);
                 return;
             }
 
@@ -97,13 +100,19 @@ public class StartSceneManager : MonoBehaviour
                 label.text = "テスト対策";
             }
 
+            button.onClick = new Button.ButtonClickedEvent();
             button.onClick.AddListener(SelectTestPreparationMode);
+            MenuSceneEffects.AttachButtonEffect(testButton);
+            modeSelectController.SetTestPreparationButton(testButton);
         }
 
         public void SelectTestPreparationMode()
         {
             PlayModeSelectionSE();
             GameModeData.SelectedMode = GameMode.TestPreparation;
+
+            if (explanationGroup != null)
+                explanationGroup.SetActive(false);
 
             if (testRangeSelector == null)
             {
@@ -118,6 +127,10 @@ public class StartSceneManager : MonoBehaviour
                 testRangeSelector = CreateTestRangeSelector(canvas.transform);
             }
 
+            if (modeSelectGroup != null)
+                modeSelectGroup.SetActive(false);
+            if (helpButton != null)
+                helpButton.gameObject.SetActive(false);
             testRangeSelector.SetActive(true);
             RefreshTestRangeButtons();
         }
@@ -181,9 +194,19 @@ public class StartSceneManager : MonoBehaviour
             Button startButton = CreateRangeButton(panel.transform, "開始", new Vector2(130f, -280f), new Vector2(180f, 62f));
             startButton.onClick.AddListener(StartSelectedTestGame);
             Button cancelButton = CreateRangeButton(panel.transform, "戻る", new Vector2(385f, -280f), new Vector2(170f, 62f));
-            cancelButton.onClick.AddListener(() => overlay.SetActive(false));
+            cancelButton.onClick.AddListener(CancelTestPreparationSelection);
 
             return overlay;
+        }
+
+        private void CancelTestPreparationSelection()
+        {
+            if (testRangeSelector != null)
+                testRangeSelector.SetActive(false);
+            if (modeSelectGroup != null)
+                modeSelectGroup.SetActive(true);
+            if (helpButton != null)
+                helpButton.gameObject.SetActive(true);
         }
 
         private Button CreateRangeButton(Transform parent, string label, Vector2 position, Vector2 size)

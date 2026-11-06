@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 using DG.Tweening;
 
 public class ModeSelectController : MonoBehaviour
@@ -8,10 +7,16 @@ public class ModeSelectController : MonoBehaviour
     [SerializeField] private GameObject jukugoButton;
     [SerializeField] private GameObject busyuButton;
     [SerializeField] private GameObject yomiButton;
+    private GameObject testPreparationButton;
+
+    public void SetTestPreparationButton(GameObject button)
+    {
+        testPreparationButton = button;
+    }
 
     public void ShowButtons()
     {
-        if (jukugoButton == null || busyuButton == null || yomiButton == null)
+        if (jukugoButton == null || busyuButton == null)
         {
             Debug.LogError("ModeSelectController: モードボタンが設定されていません。", this);
             return;
@@ -21,16 +26,12 @@ public class ModeSelectController : MonoBehaviour
 
         jukugoButton.SetActive(true);
         busyuButton.SetActive(true);
-        yomiButton.SetActive(true);
-        TMP_Text testModeLabel = yomiButton.GetComponentInChildren<TMP_Text>(true);
-        if (testModeLabel != null)
+        if (testPreparationButton != null)
+            testPreparationButton.SetActive(true);
+        if (yomiButton != null)
         {
-            testModeLabel.text = "テスト対策";
-            testModeLabel.enableAutoSizing = true;
-            testModeLabel.fontSize = 48f;
-            testModeLabel.fontSizeMin = 24f;
-            testModeLabel.fontSizeMax = 48f;
-            testModeLabel.textWrappingMode = TextWrappingModes.NoWrap;
+            yomiButton.transform.DOKill();
+            yomiButton.SetActive(false);
         }
 
         // ボタン背景を不透明度100%にし、子ラベルとクリック判定を維持する。
@@ -46,17 +47,25 @@ public class ModeSelectController : MonoBehaviour
         {
             jukugoButton.transform.localScale = Vector3.one;
             busyuButton.transform.localScale = Vector3.one;
-            yomiButton.transform.localScale = Vector3.one;
+            if (testPreparationButton != null)
+                testPreparationButton.transform.localScale = Vector3.one;
         }
         else
         {
             jukugoButton.transform.localScale = Vector3.zero;
             busyuButton.transform.localScale = Vector3.zero;
-            yomiButton.transform.localScale = Vector3.zero;
+            if (testPreparationButton != null)
+                testPreparationButton.transform.localScale = Vector3.zero;
 
             jukugoButton.transform.DOScale(1f, 0.5f).SetEase(Ease.OutBack);
             busyuButton.transform.DOScale(1f, 0.5f).SetEase(Ease.OutBack).SetDelay(0.2f);
-            yomiButton.transform.DOScale(1f, 0.5f).SetEase(Ease.OutBack).SetDelay(0.4f);
+            if (testPreparationButton != null)
+            {
+                testPreparationButton.transform
+                    .DOScale(1f, 0.5f)
+                    .SetEase(Ease.OutBack)
+                    .SetDelay(0.4f);
+            }
         }
     }
 }
