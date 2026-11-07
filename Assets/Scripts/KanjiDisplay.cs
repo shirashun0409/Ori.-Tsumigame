@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using TMPro;
 
@@ -43,7 +44,17 @@ public class KanjiDisplay : MonoBehaviour
             radicalNameText.text = "";
 
         // 熟語を「 / 」で横並び表示
-        idiomText.text = string.Join("  ", idioms);
+        if (GameModeData.SelectedMode == GameMode.TestPreparation)
+        {
+            var displayTerms = new List<string>(idioms.Count);
+            foreach (string idiom in idioms)
+                displayTerms.Add(FormatTestPreparationTerm(idiom));
+            idiomText.text = string.Join("  ", displayTerms);
+        }
+        else
+        {
+            idiomText.text = string.Join("  ", idioms);
+        }
 
         // 熟語の数によって文字サイズ変更
         if (idioms.Count == 1)
@@ -65,6 +76,22 @@ public class KanjiDisplay : MonoBehaviour
             idiomText.fontSizeMin = 16f;
             idiomText.fontSizeMax = idiomText.fontSize;
         }
+    }
+
+    private static string FormatTestPreparationTerm(string term)
+    {
+        var formattedTerm = new StringBuilder(term.Length);
+        foreach (char character in term)
+        {
+            string value = character.ToString();
+            if (TestPreparationData.IsTestPreparationKanji(value))
+                formattedTerm.Append("<color=#EBFFC9>");
+            formattedTerm.Append(value);
+            if (TestPreparationData.IsTestPreparationKanji(value))
+                formattedTerm.Append("</color>");
+        }
+
+        return formattedTerm.ToString();
     }
 
     public void SetRadicals(List<KanjiData> radicals)

@@ -183,7 +183,8 @@ public class StartSceneManager : MonoBehaviour
                     panel.transform,
                     range.ToString(),
                     new Vector2((column - 1) * 280f, 155f - row * 105f),
-                    new Vector2(240f, 76f));
+                    new Vector2(240f, 76f),
+                    48f);
                 rangeButton.onClick.AddListener(() => ToggleTestRange(range));
             }
 
@@ -209,7 +210,12 @@ public class StartSceneManager : MonoBehaviour
                 helpButton.gameObject.SetActive(true);
         }
 
-        private Button CreateRangeButton(Transform parent, string label, Vector2 position, Vector2 size)
+        private Button CreateRangeButton(
+            Transform parent,
+            string label,
+            Vector2 position,
+            Vector2 size,
+            float labelFontSize = 26f)
         {
             GameObject buttonObject = new GameObject(label, typeof(RectTransform), typeof(Image), typeof(Button));
             buttonObject.transform.SetParent(parent, false);
@@ -238,7 +244,7 @@ public class StartSceneManager : MonoBehaviour
                 colorMultiplier = 1f,
                 fadeDuration = 0.1f
             };
-            CreateRangeLabel(buttonObject.transform, label, 26f, Vector2.zero, size);
+            CreateRangeLabel(buttonObject.transform, label, labelFontSize, Vector2.zero, size);
             return button;
         }
 

@@ -810,8 +810,11 @@ public class BoardManager : MonoBehaviour
             if (!hasAllKanaSprites)
                 continue;
 
+            int requiredKanjiCells = groups[token]
+                .Max(word => word.KanjiSequence.Length);
             List<Vector2Int> candidates = positions
-                .Where(candidate => candidate.x + token.Length <= Width &&
+                .Where(candidate => candidate.x >= requiredKanjiCells &&
+                    candidate.x + token.Length <= Width &&
                     Enumerable.Range(0, token.Length).All(kanaIndex =>
                         !IsInMiddleColumns(candidate.x + kanaIndex)))
                 .OrderBy(_ => Random.value)

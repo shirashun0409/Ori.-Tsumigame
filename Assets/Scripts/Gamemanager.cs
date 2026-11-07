@@ -69,6 +69,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private KanjiDisplay kanjiDisplay;
     [SerializeField] private MeaningDisplay meaningDisplay;
     [SerializeField] private NextDisplay nextDisplay;
+    private TMP_Text modeNameText;
 
 
 
@@ -153,6 +154,8 @@ public class GameManager : MonoBehaviour
         //==================================================
 
         currentMode = GameModeData.SelectedMode;
+        InitializeModeNameDisplay();
+        UpdateModeNameDisplay();
 
         Debug.Log(
             "GameSceneで受け取ったゲームモード: " +
@@ -519,11 +522,14 @@ public class GameManager : MonoBehaviour
                 .Select(word => word.Okurigana)
                 .Distinct()
                 .ToList();
-            studyDetails.Add(
-                $"{data.kanji}（読み：{reading}）\n" +
-                $"部首：{data.radical}　総画数：{data.strokeCount}画\n" +
-                "熟語・例文：" + (examples.Count > 0 ? string.Join("、", examples) : "該当語なし") +
-                (okurigana.Count > 0 ? "\n送り仮名：" + string.Join("、", okurigana) : string.Empty));
+            if (TestPreparationData.IsTestPreparationKanji(data.kanji))
+            {
+                studyDetails.Add(
+                    $"{data.kanji}（読み：{reading}）\n" +
+                    $"部首：{data.radical}　総画数：{data.strokeCount}画\n" +
+                    "熟語・例文：" + (examples.Count > 0 ? string.Join("、", examples) : "該当語なし") +
+                    (okurigana.Count > 0 ? "\n送り仮名：" + string.Join("、", okurigana) : string.Empty));
+            }
             if (!representedKanji.Contains(data.kanji))
                 displayTerms.Add(data.kanji);
         }
@@ -570,6 +576,7 @@ public class GameManager : MonoBehaviour
         GameMode mode)
     {
         currentMode = mode;
+        UpdateModeNameDisplay();
 
         Debug.Log(
             "ゲームモード変更: " +
@@ -577,6 +584,88 @@ public class GameManager : MonoBehaviour
         );
     }
 
+    private void InitializeModeNameDisplay()
+    {
+        GameObject panel = GameObject.Find("ModenamePanel");
+        Transform panelTransform = panel != null ? panel.transform : null;
+        if (panelTransform != null)
+        {
+            Transform labelTransform = panelTransform.Find("Modename");
+            if (labelTransform != null)
+                modeNameText = labelTransform.GetComponent<TMP_Text>();
+        }
+
+        if (modeNameText != null)
+            return;
+
+        Canvas canvas = null;
+        if (kanjiDisplay != null)
+            canvas = kanjiDisplay.GetComponentInParent<Canvas>();
+        if (canvas == null)
+        {
+            Debug.LogError("GameManager: ゲームモード名を表示するCanvasが見つかりません。", this);
+            return;
+        }
+
+        if (panelTransform == null)
+        {
+            GameObject panelObject = new GameObject("ModenamePanel", typeof(RectTransform));
+            panelTransform = panelObject.transform;
+            panelTransform.SetParent(canvas.transform, false);
+
+            RectTransform panelRect = panelObject.GetComponent<RectTransform>();
+            panelRect.anchorMin = new Vector2(0.5f, 1f);
+            panelRect.anchorMax = new Vector2(0.5f, 1f);
+            panelRect.pivot = new Vector2(0.5f, 1f);
+            panelRect.anchoredPosition = new Vector2(0f, -80f);
+            panelRect.sizeDelta = new Vector2(600f, 80f);
+        }
+
+        GameObject labelObject = new GameObject(
+            "Modename",
+            typeof(RectTransform),
+            typeof(TextMeshProUGUI));
+        labelObject.transform.SetParent(panelTransform, false);
+        RectTransform labelRect = labelObject.GetComponent<RectTransform>();
+        labelRect.anchorMin = Vector2.zero;
+        labelRect.anchorMax = Vector2.one;
+        labelRect.offsetMin = Vector2.zero;
+        labelRect.offsetMax = Vector2.zero;
+
+        modeNameText = labelObject.GetComponent<TextMeshProUGUI>();
+        TMP_Text referenceText = kanjiDisplay.GetComponentInChildren<TMP_Text>(true);
+        if (referenceText != null)
+            modeNameText.font = referenceText.font;
+        modeNameText.fontSize = 32f;
+        modeNameText.color = Color.white;
+        modeNameText.alignment = TextAlignmentOptions.Center;
+        modeNameText.raycastTarget = false;
+    }
+
+    private void UpdateModeNameDisplay()
+    {
+        if (modeNameText == null)
+            return;
+
+        switch (currentMode)
+        {
+            case GameMode.Idiom:
+                modeNameText.text = "熟語モード";
+                break;
+            case GameMode.Radical:
+                modeNameText.text = "部首モード";
+                break;
+            case GameMode.TestPreparation:
+                modeNameText.text = "テスト対策モード";
+                break;
+            case GameMode.Reading:
+                modeNameText.text = "読みモード";
+                break;
+            default:
+                modeNameText.text = string.Empty;
+                break;
+        }
+    }
 
     public GameMode GetGameMode()
     {

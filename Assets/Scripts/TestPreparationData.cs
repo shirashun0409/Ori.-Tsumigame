@@ -368,6 +368,20 @@ public static class TestPreparationData
         return word.Okurigana;
     }
 
+    public static bool IsTestPreparationKanji(string character)
+    {
+        if (string.IsNullOrEmpty(character))
+            return false;
+
+        for (int range = 22; range <= 30; range++)
+        {
+            if (GetRangeKanji(range).Contains(character))
+                return true;
+        }
+
+        return false;
+    }
+
     private static string[] GetRangeKanji(int range)
     {
         string characters;
