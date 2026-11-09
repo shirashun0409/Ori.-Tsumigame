@@ -1403,13 +1403,14 @@ GameObject:
   - component: {fileID: 473390065}
   - component: {fileID: 473390067}
   - component: {fileID: 473390066}
+  - component: {fileID: 880000000}
   m_Layer: 5
   m_Name: SettingsPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &473390065
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1473,6 +1474,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 473390064}
   m_CullTransparentMesh: 1
+--- !u!114 &880000000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 473390064}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f46ef51ce35642a29acebc3386f95a4f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::SettingsUIController
 --- !u!1 &493869384
 GameObject:
   m_ObjectHideFlags: 0
