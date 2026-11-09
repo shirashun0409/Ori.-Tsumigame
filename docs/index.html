@@ -64,16 +64,17 @@
       }
 
       var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/docs.loader.js";
+      var buildVersion = "1.1";
+      var loaderUrl = buildUrl + "/docs.loader.js?v=" + buildVersion;
       var config = {
         arguments: [],
-        dataUrl: buildUrl + "/docs.data.unityweb",
-        frameworkUrl: buildUrl + "/docs.framework.js.unityweb",
-        codeUrl: buildUrl + "/docs.wasm.unityweb",
+        dataUrl: buildUrl + "/docs.data.unityweb?v=" + buildVersion,
+        frameworkUrl: buildUrl + "/docs.framework.js.unityweb?v=" + buildVersion,
+        codeUrl: buildUrl + "/docs.wasm.unityweb?v=" + buildVersion,
         streamingAssetsUrl: "StreamingAssets",
         companyName: "DefaultCompany",
         productName: "Ori.1-kanjipazle-ver.1.05",
-        productVersion: "1.0",
+        productVersion: buildVersion,
         showBanner: unityShowBanner,
         // errorHandler: function(err, url, line) {
         //    alert("error " + err + " occurred at line " + line);
